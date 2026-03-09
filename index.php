@@ -3,11 +3,11 @@
 declare(strict_types=1);
 
 $pageTitle = 'Voyara';
+
 require_once __DIR__ . '/includes/header.php';
 ?>
 <section class="home-hero">
     <div class="hero-copy">
-        <p class="eyebrow">Voyara</p>
         <h1>Book bus seats with a cleaner flow.</h1>
         <p class="lead">Check availability by date, choose your seats, and send the request to admin through WhatsApp.</p>
         <div class="hero-actions">

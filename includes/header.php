@@ -15,6 +15,8 @@ $bodyClass = $bodyClass ?? ($isAdminArea ? 'admin-shell' : 'public-shell');
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= h($pageTitle) ?></title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/PageLogo.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/images/SiteLogo.png">
     <link rel="stylesheet" href="/assets/css/style.css">
 </head>
 <body class="<?= h($bodyClass) ?>">
