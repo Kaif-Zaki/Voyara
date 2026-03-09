@@ -1,0 +1,125 @@
+<?php
+
+declare(strict_types=1);
+
+require_once __DIR__ . '/../includes/functions.php';
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    header('Location: /booking.php');
+    exit;
+}
+
+$travelDate = selected_date_or_today(request_value('travel_date'));
+$busId = (int) request_value('bus_id');
+$fullName = request_value('full_name');
+$phone = request_value('phone');
+$pickupPoint = request_value('pickup_point');
+$dropLocation = request_value('drop_location');
+$seatIds = array_values(array_filter(array_map('intval', explode(',', request_value('seat_ids')))));
+
+$_SESSION['booking_old'] = [
+    'full_name' => $fullName,
+    'phone' => $phone,
+    'pickup_point' => $pickupPoint,
+    'drop_location' => $dropLocation,
+];
+
+if ($busId <= 0 || $fullName === '' || $phone === '' || $pickupPoint === '' || $dropLocation === '' || $seatIds === []) {
+    $_SESSION['booking_error'] = 'Complete all fields and select at least one available seat.';
+    header('Location: /booking.php?travel_date=' . urlencode($travelDate) . '&bus_id=' . $busId);
+    exit;
+}
+
+$bus = get_bus_by_id($busId);
+
+if (!$bus) {
+    $_SESSION['booking_error'] = 'Selected bus was not found.';
+    header('Location: /booking.php');
+    exit;
+}
+
+$seatPlaceholders = implode(',', array_fill(0, count($seatIds), '?'));
+
+try {
+    $pdo = db();
+    $pdo->beginTransaction();
+
+    $seatCheckSql = "
+        SELECT s.id, s.seat_number
+        FROM seats s
+        LEFT JOIN booking_seats bs ON bs.seat_id = s.id
+        LEFT JOIN bookings b ON b.id = bs.booking_id
+            AND b.travel_date = ?
+            AND b.status IN ('pending', 'booked')
+        WHERE s.bus_id = ?
+            AND s.id IN ($seatPlaceholders)
+        GROUP BY s.id, s.seat_number
+        HAVING MAX(CASE WHEN b.status = 'booked' THEN 2 WHEN b.status = 'pending' THEN 1 ELSE 0 END) = 0
+    ";
+
+    $params = array_merge([$travelDate, $busId], $seatIds);
+    $seatStmt = $pdo->prepare($seatCheckSql);
+    $seatStmt->execute($params);
+    $availableSeats = $seatStmt->fetchAll();
+
+    if (count($availableSeats) !== count($seatIds)) {
+        $pdo->rollBack();
+        $_SESSION['booking_error'] = 'One or more selected seats are no longer available. Please reload the seat map.';
+        header('Location: /booking.php?travel_date=' . urlencode($travelDate) . '&bus_id=' . $busId);
+        exit;
+    }
+
+    $bookingStmt = $pdo->prepare("
+        INSERT INTO bookings (bus_id, travel_date, full_name, phone, pickup_point, drop_location, status, created_at)
+        VALUES (:bus_id, :travel_date, :full_name, :phone, :pickup_point, :drop_location, 'pending', NOW())
+    ");
+    $bookingStmt->execute([
+        'bus_id' => $busId,
+        'travel_date' => $travelDate,
+        'full_name' => $fullName,
+        'phone' => $phone,
+        'pickup_point' => $pickupPoint,
+        'drop_location' => $dropLocation,
+    ]);
+
+    $bookingId = (int) $pdo->lastInsertId();
+    $linkStmt = $pdo->prepare('INSERT INTO booking_seats (booking_id, seat_id) VALUES (:booking_id, :seat_id)');
+
+    foreach ($seatIds as $seatId) {
+        $linkStmt->execute([
+            'booking_id' => $bookingId,
+            'seat_id' => $seatId,
+        ]);
+    }
+
+    $pdo->commit();
+} catch (Throwable $exception) {
+    if (isset($pdo) && $pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+
+    $_SESSION['booking_error'] = 'Booking could not be saved. Check the database configuration and try again.';
+    header('Location: /booking.php?travel_date=' . urlencode($travelDate) . '&bus_id=' . $busId);
+    exit;
+}
+
+$seatNumbers = array_column($availableSeats, 'seat_number');
+$message = implode("\n", [
+    'New Booking Request',
+    '',
+    'Name: ' . $fullName,
+    'Phone: ' . $phone,
+    'Date: ' . $travelDate,
+    'Bus: ' . $bus['name'] . ' (' . $bus['bus_number'] . ')',
+    'Seats: ' . implode(', ', $seatNumbers),
+    'Pickup: ' . $pickupPoint,
+    'Drop: ' . $dropLocation,
+    'Status: Pending',
+]);
+
+unset($_SESSION['booking_old']);
+
+$whatsAppNumber = preg_replace('/\D+/', '', ADMIN_WHATSAPP_NUMBER) ?? '';
+$whatsAppUrl = 'https://api.whatsapp.com/send?phone=' . $whatsAppNumber . '&text=' . rawurlencode($message);
+header('Location: ' . $whatsAppUrl);
+exit;
