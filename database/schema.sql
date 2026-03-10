@@ -1,4 +1,5 @@
-CREATE DATABASE IF NOT EXISTS bus_room_schedule CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+DROP DATABASE IF EXISTS bus_room_schedule;
+CREATE DATABASE bus_room_schedule CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE bus_room_schedule;
 
 CREATE TABLE IF NOT EXISTS admins (
@@ -12,7 +13,13 @@ CREATE TABLE IF NOT EXISTS buses (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     bus_number VARCHAR(50) NOT NULL,
-    total_seats INT UNSIGNED NOT NULL DEFAULT 40,
+    total_seats INT UNSIGNED NOT NULL DEFAULT 49,
+    origin VARCHAR(150) NULL,
+    destination VARCHAR(150) NULL,
+    bus_type VARCHAR(50) NOT NULL DEFAULT 'Normal',
+    description TEXT NULL,
+    image_url TEXT NULL,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -33,7 +40,7 @@ CREATE TABLE IF NOT EXISTS bookings (
     phone VARCHAR(50) NOT NULL,
     pickup_point VARCHAR(150) NOT NULL,
     drop_location VARCHAR(150) NOT NULL,
-    status ENUM('pending', 'booked') NOT NULL DEFAULT 'pending',
+    status ENUM('pending', 'booked', 'available') NOT NULL DEFAULT 'pending',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_bookings_bus FOREIGN KEY (bus_id) REFERENCES buses(id) ON DELETE CASCADE
 );
@@ -48,17 +55,35 @@ CREATE TABLE IF NOT EXISTS booking_seats (
     CONSTRAINT uq_booking_seat UNIQUE (booking_id, seat_id)
 );
 
+CREATE TABLE IF NOT EXISTS seat_status_overrides (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    bus_id INT UNSIGNED NOT NULL,
+    seat_id INT UNSIGNED NOT NULL,
+    travel_date DATE NOT NULL,
+    status ENUM('available', 'pending', 'booked') NOT NULL DEFAULT 'available',
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_overrides_bus FOREIGN KEY (bus_id) REFERENCES buses(id) ON DELETE CASCADE,
+    CONSTRAINT fk_overrides_seat FOREIGN KEY (seat_id) REFERENCES seats(id) ON DELETE CASCADE,
+    CONSTRAINT uq_override UNIQUE (bus_id, seat_id, travel_date)
+);
+
+CREATE TABLE IF NOT EXISTS bus_stops (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    bus_id INT UNSIGNED NOT NULL,
+    stop_name VARCHAR(150) NOT NULL,
+    sort_order INT UNSIGNED NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_bus_stops_bus FOREIGN KEY (bus_id) REFERENCES buses(id) ON DELETE CASCADE,
+    CONSTRAINT uq_bus_stop UNIQUE (bus_id, stop_name)
+);
+
 INSERT INTO admins (username, password_hash)
-SELECT 'admin', '$2y$10$2PKTg2IqySDovY3JtbiPIe1QHmHE.KK8ZnNii7wNQSqEBuCDEkrnS'
-WHERE NOT EXISTS (SELECT 1 FROM admins WHERE username = 'admin');
+VALUES ('admin', '$2y$10$2PKTg2IqySDovY3JtbiPIe1QHmHE.KK8ZnNii7wNQSqEBuCDEkrnS');
 
-INSERT INTO buses (name, bus_number, total_seats)
-SELECT 'Bus 1', 'NB-1001', 40
-WHERE NOT EXISTS (SELECT 1 FROM buses WHERE bus_number = 'NB-1001');
-
-INSERT INTO buses (name, bus_number, total_seats)
-SELECT 'Bus 2', 'NB-1002', 40
-WHERE NOT EXISTS (SELECT 1 FROM buses WHERE bus_number = 'NB-1002');
+INSERT INTO buses (name, bus_number, total_seats, bus_type, is_active)
+VALUES
+('Bus 1', 'NB-1001', 49, 'Normal', 1),
+('Bus 2', 'NB-1002', 49, 'Normal', 1);
 
 INSERT INTO seats (bus_id, seat_number)
 SELECT b.id, seat_numbers.seat_number
@@ -74,9 +99,11 @@ JOIN (
     UNION ALL SELECT '29' UNION ALL SELECT '30' UNION ALL SELECT '31' UNION ALL SELECT '32'
     UNION ALL SELECT '33' UNION ALL SELECT '34' UNION ALL SELECT '35' UNION ALL SELECT '36'
     UNION ALL SELECT '37' UNION ALL SELECT '38' UNION ALL SELECT '39' UNION ALL SELECT '40'
+    UNION ALL SELECT '41' UNION ALL SELECT '42' UNION ALL SELECT '43' UNION ALL SELECT '44'
+    UNION ALL SELECT '45' UNION ALL SELECT '46' UNION ALL SELECT '47' UNION ALL SELECT '48'
+    UNION ALL SELECT '49'
 ) AS seat_numbers
-LEFT JOIN seats existing ON existing.bus_id = b.id AND existing.seat_number = seat_numbers.seat_number
-WHERE b.bus_number = 'NB-1001' AND existing.id IS NULL;
+WHERE b.bus_number = 'NB-1001';
 
 INSERT INTO seats (bus_id, seat_number)
 SELECT b.id, seat_numbers.seat_number
@@ -92,9 +119,11 @@ JOIN (
     UNION ALL SELECT '29' UNION ALL SELECT '30' UNION ALL SELECT '31' UNION ALL SELECT '32'
     UNION ALL SELECT '33' UNION ALL SELECT '34' UNION ALL SELECT '35' UNION ALL SELECT '36'
     UNION ALL SELECT '37' UNION ALL SELECT '38' UNION ALL SELECT '39' UNION ALL SELECT '40'
+    UNION ALL SELECT '41' UNION ALL SELECT '42' UNION ALL SELECT '43' UNION ALL SELECT '44'
+    UNION ALL SELECT '45' UNION ALL SELECT '46' UNION ALL SELECT '47' UNION ALL SELECT '48'
+    UNION ALL SELECT '49'
 ) AS seat_numbers
-LEFT JOIN seats existing ON existing.bus_id = b.id AND existing.seat_number = seat_numbers.seat_number
-WHERE b.bus_number = 'NB-1002' AND existing.id IS NULL;
+WHERE b.bus_number = 'NB-1002';
 
 -- Default admin login:
 -- username: admin

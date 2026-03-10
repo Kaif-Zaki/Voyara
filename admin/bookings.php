@@ -51,12 +51,23 @@ require_once __DIR__ . '/../includes/header.php';
                 </thead>
                 <tbody>
                 <?php foreach ($bookings as $booking): ?>
+                    <?php
+                    $routeLabel = get_bus_route_label([
+                        'origin' => $booking['bus_origin'] ?? '',
+                        'destination' => $booking['bus_destination'] ?? '',
+                    ]);
+                    ?>
                     <tr>
                         <td>
                             <strong><?= h($booking['full_name']) ?></strong><br>
                             <?= h($booking['phone']) ?>
                         </td>
-                        <td><?= h($booking['bus_name']) ?></td>
+                        <td>
+                            <?= h($booking['bus_name']) ?>
+                            <?php if ($routeLabel !== ''): ?>
+                                <div class="muted"><?= h($routeLabel) ?></div>
+                            <?php endif; ?>
+                        </td>
                         <td><?= h($booking['seat_numbers']) ?></td>
                         <td><?= h($booking['pickup_point']) ?> to <?= h($booking['drop_location']) ?></td>
                         <td><span class="status-chip <?= h($booking['status']) ?>"><?= h(status_label($booking['status'])) ?></span></td>
@@ -65,6 +76,7 @@ require_once __DIR__ . '/../includes/header.php';
                                 <input type="hidden" name="booking_id" value="<?= (int) $booking['id'] ?>">
                                 <input type="hidden" name="travel_date" value="<?= h($travelDate) ?>">
                                 <select name="status">
+                                    <option value="available" <?= $booking['status'] === 'available' ? 'selected' : '' ?>>Available</option>
                                     <option value="pending" <?= $booking['status'] === 'pending' ? 'selected' : '' ?>>Pending</option>
                                     <option value="booked" <?= $booking['status'] === 'booked' ? 'selected' : '' ?>>Booked</option>
                                 </select>

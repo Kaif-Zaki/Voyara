@@ -16,7 +16,7 @@ $bookingId = (int) request_value('booking_id');
 $travelDate = selected_date_or_today(request_value('travel_date'));
 $status = request_value('status');
 
-if ($bookingId <= 0 || !in_array($status, ['pending', 'booked'], true)) {
+if ($bookingId <= 0 || !in_array($status, ['pending', 'booked', 'available'], true)) {
     header('Location: /admin/bookings.php?travel_date=' . urlencode($travelDate));
     exit;
 }

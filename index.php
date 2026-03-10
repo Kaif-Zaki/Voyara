@@ -8,8 +8,9 @@ require_once __DIR__ . '/includes/header.php';
 ?>
 <section class="home-hero">
     <div class="hero-copy">
-        <h1>Book bus seats with a cleaner flow.</h1>
-        <p class="lead">Check availability by date, choose your seats, and send the request to admin through WhatsApp.</p>
+        <p class="eyebrow">Voyara bus booking</p>
+        <h1>Seat booking that stays simple.</h1>
+        <p class="lead">See live seat availability, pick seats by date, and send your request directly to admin through WhatsApp.</p>
         <div class="hero-actions">
             <a class="button" href="/booking.php">Book Now</a>
             <a class="button secondary" href="/about.php">About Us</a>
@@ -20,7 +21,7 @@ require_once __DIR__ . '/includes/header.php';
                 <span>Buses</span>
             </div>
             <div>
-                <strong>40</strong>
+                <strong>49</strong>
                 <span>Seats each</span>
             </div>
             <div>
@@ -31,35 +32,49 @@ require_once __DIR__ . '/includes/header.php';
     </div>
 
     <div class="hero-card feature-panel">
-        <div class="route-pill">3-step booking</div>
+        <div class="hero-visual">
+            <div class="hero-visual-header">
+                <span class="route-pill">Next departure</span>
+                <span class="pill">Colombo → Kandy</span>
+            </div>
+            <div class="hero-visual-body">
+                <div>
+                    <small>Seats available</small>
+                    <strong>38 / 49</strong>
+                </div>
+                <div>
+                    <small>Bus type</small>
+                    <strong>Luxury</strong>
+                </div>
+                <div>
+                    <small>Pickup</small>
+                    <strong>8:00 AM</strong>
+                </div>
+            </div>
+        </div>
         <div class="hero-steps">
             <article>
                 <span>01</span>
-                <p>Select date</p>
+                <p>Select travel date</p>
             </article>
             <article>
                 <span>02</span>
-                <p>Pick seats</p>
+                <p>Choose seats</p>
             </article>
             <article>
                 <span>03</span>
-                <p>Send on WhatsApp</p>
+                <p>Send booking</p>
             </article>
-        </div>
-        <div class="hero-highlight">
-            <div>
-                <small>Status</small>
-                <strong>Live seat view</strong>
-            </div>
-            <div>
-                <small>Admin</small>
-                <strong>Manual confirmation</strong>
-            </div>
         </div>
     </div>
 </section>
 
 <section class="section-block">
+    <div class="section-heading">
+        <p class="eyebrow">Why Voyara</p>
+        <h2>Designed for fast, low-friction bookings.</h2>
+        <p class="lead">Passengers book without accounts while the operator keeps manual control of payments.</p>
+    </div>
     <div class="cards-grid three-up">
         <article class="info-card">
             <h3>Live availability</h3>
@@ -70,8 +85,8 @@ require_once __DIR__ . '/includes/header.php';
             <p>No passenger account required to reserve seats.</p>
         </article>
         <article class="info-card">
-            <h3>Flexible admin flow</h3>
-            <p>Payments and confirmation stay under manual control.</p>
+            <h3>Operator control</h3>
+            <p>Admins decide when to mark seats as pending or booked.</p>
         </article>
     </div>
 </section>

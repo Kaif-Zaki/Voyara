@@ -38,6 +38,12 @@ if (!$bus) {
     exit;
 }
 
+if ((int) ($bus['is_active'] ?? 1) !== 1) {
+    $_SESSION['booking_error'] = 'Selected bus is currently unavailable. Please choose another bus.';
+    header('Location: /booking.php?travel_date=' . urlencode($travelDate));
+    exit;
+}
+
 $seatPlaceholders = implode(',', array_fill(0, count($seatIds), '?'));
 
 try {
@@ -45,19 +51,28 @@ try {
     $pdo->beginTransaction();
 
     $seatCheckSql = "
-        SELECT s.id, s.seat_number
+        SELECT s.id, s.seat_number,
+            CASE
+                WHEN o.status IS NOT NULL THEN o.status
+                WHEN MAX(CASE WHEN b.status = 'booked' THEN 2 WHEN b.status = 'pending' THEN 1 ELSE 0 END) = 2 THEN 'booked'
+                WHEN MAX(CASE WHEN b.status = 'booked' THEN 2 WHEN b.status = 'pending' THEN 1 ELSE 0 END) = 1 THEN 'pending'
+                ELSE 'available'
+            END AS effective_status
         FROM seats s
+        LEFT JOIN seat_status_overrides o
+            ON o.seat_id = s.id
+            AND o.travel_date = ?
         LEFT JOIN booking_seats bs ON bs.seat_id = s.id
         LEFT JOIN bookings b ON b.id = bs.booking_id
             AND b.travel_date = ?
             AND b.status IN ('pending', 'booked')
         WHERE s.bus_id = ?
             AND s.id IN ($seatPlaceholders)
-        GROUP BY s.id, s.seat_number
-        HAVING MAX(CASE WHEN b.status = 'booked' THEN 2 WHEN b.status = 'pending' THEN 1 ELSE 0 END) = 0
+        GROUP BY s.id, s.seat_number, o.status
+        HAVING effective_status = 'available'
     ";
 
-    $params = array_merge([$travelDate, $busId], $seatIds);
+    $params = array_merge([$travelDate, $travelDate, $busId], $seatIds);
     $seatStmt = $pdo->prepare($seatCheckSql);
     $seatStmt->execute($params);
     $availableSeats = $seatStmt->fetchAll();
@@ -104,18 +119,41 @@ try {
 }
 
 $seatNumbers = array_column($availableSeats, 'seat_number');
-$message = implode("\n", [
+$seatDetails = [];
+foreach ($seatNumbers as $seatNumber) {
+    $sn = seat_number_normalize((string) $seatNumber);
+    $seatDetails[] = $sn . ' (' . seat_label_49($sn) . ')';
+}
+
+$messageLines = [
     'New Booking Request',
     '',
     'Name: ' . $fullName,
     'Phone: ' . $phone,
     'Date: ' . $travelDate,
     'Bus: ' . $bus['name'] . ' (' . $bus['bus_number'] . ')',
-    'Seats: ' . implode(', ', $seatNumbers),
+];
+
+$routeLabel = get_bus_route_label($bus);
+if ($routeLabel !== '') {
+    $messageLines[] = 'Route: ' . $routeLabel;
+}
+
+$messageLines = array_merge($messageLines, [
+    'Seats:',
+]);
+
+foreach ($seatDetails as $detail) {
+    $messageLines[] = '- ' . $detail;
+}
+
+$messageLines = array_merge($messageLines, [
     'Pickup: ' . $pickupPoint,
     'Drop: ' . $dropLocation,
     'Status: Pending',
 ]);
+
+$message = implode("\n", $messageLines);
 
 unset($_SESSION['booking_old']);
 

@@ -23,12 +23,13 @@ $bodyClass = $bodyClass ?? ($isAdminArea ? 'admin-shell' : 'public-shell');
 <header class="site-header">
     <div class="container header-row">
         <a class="brand" href="/index.php" aria-label="Voyara home">
-            <img src="/assets/images/logo.png" alt="Voyara logo">
+            <img src="/assets/images/SiteLogo.png" alt="Voyara logo">
         </a>
         <?php if ($isAdminArea): ?>
             <nav class="top-nav admin-nav">
-                <a class="<?= is_active_path('/admin/bookings.php') ? 'active' : '' ?>" href="/admin/bookings.php">Bookings</a>
+                <a class="<?= is_active_path('/admin/dashboard.php') ? 'active' : '' ?>" href="/admin/dashboard.php">Admin Panel</a>
                 <a class="<?= is_active_path('/admin/seats.php') ? 'active' : '' ?>" href="/admin/seats.php">Seats</a>
+                <a class="<?= is_active_path('/admin/buses.php') ? 'active' : '' ?>" href="/admin/buses.php">Buses</a>
                 <a class="<?= is_active_path('/admin/login.php') ? 'active' : '' ?>" href="/admin/login.php">Admin</a>
             </nav>
         <?php else: ?>
