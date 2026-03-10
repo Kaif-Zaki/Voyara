@@ -20,6 +20,8 @@ $busType = request_value('bus_type');
 $description = request_value('description');
 $imageUrl = request_value('image_url');
 $isActive = request_value('is_active');
+$startTime = request_value('start_time');
+$endTime = request_value('end_time');
 $stopsRaw = request_value('stops');
 
 if ($name === '' || $busNumber === '') {
@@ -31,10 +33,22 @@ $stops = preg_split('/\r\n|\r|\n/', $stopsRaw) ?: [];
 $normalizedStops = [];
 foreach ($stops as $stop) {
     $stop = trim($stop);
-    if ($stop === '' || in_array($stop, $normalizedStops, true)) {
+    if ($stop === '') {
         continue;
     }
-    $normalizedStops[] = $stop;
+    $parts = array_map('trim', explode('|', $stop));
+    $name = $parts[0] ?? '';
+    if ($name === '') {
+        continue;
+    }
+    $offset = 0;
+    if (isset($parts[1]) && $parts[1] !== '') {
+        $offset = max(0, (int) $parts[1]);
+    }
+    if (array_key_exists($name, $normalizedStops)) {
+        continue;
+    }
+    $normalizedStops[$name] = $offset;
 }
 
 $pdo = db();
@@ -42,8 +56,8 @@ $pdo->beginTransaction();
 
 try {
     $stmt = $pdo->prepare('
-        INSERT INTO buses (name, bus_number, total_seats, origin, destination, bus_type, description, image_url, is_active)
-        VALUES (:name, :bus_number, :total_seats, :origin, :destination, :bus_type, :description, :image_url, :is_active)
+        INSERT INTO buses (name, bus_number, total_seats, origin, destination, bus_type, description, image_url, start_time, end_time, is_active)
+        VALUES (:name, :bus_number, :total_seats, :origin, :destination, :bus_type, :description, :image_url, :start_time, :end_time, :is_active)
     ');
     $stmt->execute([
         'name' => $name,
@@ -54,18 +68,23 @@ try {
         'bus_type' => $busType !== '' ? $busType : 'Normal',
         'description' => $description !== '' ? $description : null,
         'image_url' => $imageUrl !== '' ? $imageUrl : null,
+        'start_time' => $startTime !== '' ? $startTime : null,
+        'end_time' => $endTime !== '' ? $endTime : null,
         'is_active' => $isActive === '1' ? 1 : 0,
     ]);
 
     $busId = (int) $pdo->lastInsertId();
 
     if ($normalizedStops !== []) {
-        $insertStop = $pdo->prepare('INSERT INTO bus_stops (bus_id, stop_name, sort_order) VALUES (:bus_id, :stop_name, :sort_order)');
-        foreach ($normalizedStops as $index => $stop) {
+        $insertStop = $pdo->prepare('INSERT INTO bus_stops (bus_id, stop_name, stop_offset_minutes, sort_order) VALUES (:bus_id, :stop_name, :stop_offset_minutes, :sort_order)');
+        $index = 0;
+        foreach ($normalizedStops as $stopName => $offset) {
+            $index++;
             $insertStop->execute([
                 'bus_id' => $busId,
-                'stop_name' => $stop,
-                'sort_order' => $index + 1,
+                'stop_name' => $stopName,
+                'stop_offset_minutes' => $offset,
+                'sort_order' => $index,
             ]);
         }
     }

@@ -34,19 +34,19 @@ function selected_date_or_today(?string $value = null): string
 
 function get_buses(): array
 {
-    return db()->query('SELECT id, name, bus_number, total_seats, origin, destination, bus_type, description, image_url, is_active FROM buses ORDER BY id ASC')->fetchAll();
+    return db()->query('SELECT id, name, bus_number, total_seats, origin, destination, bus_type, description, image_url, start_time, end_time, is_active FROM buses ORDER BY id ASC')->fetchAll();
 }
 
 function get_active_buses(): array
 {
-    $stmt = db()->prepare('SELECT id, name, bus_number, total_seats, origin, destination, bus_type, description, image_url, is_active FROM buses WHERE is_active = 1 ORDER BY id ASC');
+    $stmt = db()->prepare('SELECT id, name, bus_number, total_seats, origin, destination, bus_type, description, image_url, start_time, end_time, is_active FROM buses WHERE is_active = 1 ORDER BY id ASC');
     $stmt->execute();
     return $stmt->fetchAll();
 }
 
 function get_bus_by_id(int $busId): ?array
 {
-    $stmt = db()->prepare('SELECT id, name, bus_number, total_seats, origin, destination, bus_type, description, image_url, is_active FROM buses WHERE id = :id LIMIT 1');
+    $stmt = db()->prepare('SELECT id, name, bus_number, total_seats, origin, destination, bus_type, description, image_url, start_time, end_time, is_active FROM buses WHERE id = :id LIMIT 1');
     $stmt->execute(['id' => $busId]);
     $bus = $stmt->fetch();
 
@@ -63,6 +63,85 @@ function get_bus_stops(int $busId): array
     $stmt = db()->prepare('SELECT stop_name FROM bus_stops WHERE bus_id = :bus_id ORDER BY sort_order ASC, id ASC');
     $stmt->execute(['bus_id' => $busId]);
     return array_map(static fn ($row) => $row['stop_name'], $stmt->fetchAll());
+}
+
+function get_bus_stops_with_offsets(int $busId): array
+{
+    $stmt = db()->prepare('SELECT stop_name, stop_offset_minutes FROM bus_stops WHERE bus_id = :bus_id ORDER BY sort_order ASC, id ASC');
+    $stmt->execute(['bus_id' => $busId]);
+    return $stmt->fetchAll();
+}
+
+function get_bus_stops_lines(int $busId): string
+{
+    $stops = get_bus_stops_with_offsets($busId);
+    $lines = [];
+    foreach ($stops as $stop) {
+        $name = $stop['stop_name'];
+        $offset = (int) ($stop['stop_offset_minutes'] ?? 0);
+        if ($offset > 0) {
+            $lines[] = $name . ' | ' . $offset;
+        } else {
+            $lines[] = $name;
+        }
+    }
+    return implode("\n", $lines);
+}
+
+function get_stop_offsets_map(int $busId): array
+{
+    $stops = get_bus_stops_with_offsets($busId);
+    $map = [];
+    foreach ($stops as $stop) {
+        $map[$stop['stop_name']] = (int) ($stop['stop_offset_minutes'] ?? 0);
+    }
+    return $map;
+}
+
+function time_to_minutes(?string $time): ?int
+{
+    if (!$time) {
+        return null;
+    }
+    [$h, $m] = array_pad(explode(':', $time), 2, 0);
+    return ((int) $h) * 60 + (int) $m;
+}
+
+function minutes_to_time(int $minutes): string
+{
+    $minutes = $minutes % (24 * 60);
+    $h = (int) floor($minutes / 60);
+    $m = $minutes % 60;
+    return str_pad((string) $h, 2, '0', STR_PAD_LEFT) . ':' . str_pad((string) $m, 2, '0', STR_PAD_LEFT);
+}
+
+function format_duration_minutes(?int $minutes): string
+{
+    if ($minutes === null || $minutes < 0) {
+        return '';
+    }
+    $hours = intdiv($minutes, 60);
+    $mins = $minutes % 60;
+    if ($hours > 0 && $mins > 0) {
+        return $hours . 'h ' . $mins . 'm';
+    }
+    if ($hours > 0) {
+        return $hours . 'h';
+    }
+    return $mins . 'm';
+}
+
+function normalize_phone_number(string $phone): string
+{
+    $digits = preg_replace('/\D+/', '', $phone) ?? '';
+    if ($digits === '') {
+        return '';
+    }
+    // Sri Lanka fallback: if number starts with 0 and is 10 digits, convert to country code.
+    if (strlen($digits) === 10 && str_starts_with($digits, '0')) {
+        return '94' . substr($digits, 1);
+    }
+    return $digits;
 }
 
 function get_bus_route_label(array $bus): string
@@ -286,6 +365,43 @@ function get_booking_by_id(int $bookingId): ?array
 {
     $stmt = db()->prepare('SELECT id, status FROM bookings WHERE id = :id LIMIT 1');
     $stmt->execute(['id' => $bookingId]);
+    $booking = $stmt->fetch();
+
+    return $booking ?: null;
+}
+
+function get_booking_details(int $bookingId): ?array
+{
+    $sql = "
+        SELECT
+            b.id,
+            b.travel_date,
+            b.full_name,
+            b.phone,
+            b.pickup_point,
+            b.drop_location,
+            b.status,
+            b.created_at,
+            buses.id AS bus_id,
+            buses.name AS bus_name,
+            buses.bus_number AS bus_number,
+            buses.origin AS bus_origin,
+            buses.destination AS bus_destination,
+            buses.start_time AS bus_start_time,
+            buses.end_time AS bus_end_time,
+            buses.bus_type AS bus_type,
+            GROUP_CONCAT(s.seat_number ORDER BY s.id SEPARATOR ', ') AS seat_numbers
+        FROM bookings b
+        INNER JOIN buses ON buses.id = b.bus_id
+        INNER JOIN booking_seats bs ON bs.booking_id = b.id
+        INNER JOIN seats s ON s.id = bs.seat_id
+        WHERE b.id = :booking_id
+        GROUP BY b.id
+        LIMIT 1
+    ";
+
+    $stmt = db()->prepare($sql);
+    $stmt->execute(['booking_id' => $bookingId]);
     $booking = $stmt->fetch();
 
     return $booking ?: null;

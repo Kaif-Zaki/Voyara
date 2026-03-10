@@ -82,6 +82,11 @@ require_once __DIR__ . '/../includes/header.php';
                                 </select>
                                 <button type="submit" class="button small">Update</button>
                             </form>
+                            <form method="post" action="/actions/send-approval.php" class="inline-form">
+                                <input type="hidden" name="booking_id" value="<?= (int) $booking['id'] ?>">
+                                <input type="hidden" name="travel_date" value="<?= h($travelDate) ?>">
+                                <button type="submit" class="button ghost small">Approve & WhatsApp</button>
+                            </form>
                         </td>
                     </tr>
                 <?php endforeach; ?>

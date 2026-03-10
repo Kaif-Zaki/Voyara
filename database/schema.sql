@@ -19,6 +19,8 @@ CREATE TABLE IF NOT EXISTS buses (
     bus_type VARCHAR(50) NOT NULL DEFAULT 'Normal',
     description TEXT NULL,
     image_url TEXT NULL,
+    start_time TIME NULL,
+    end_time TIME NULL,
     is_active TINYINT(1) NOT NULL DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -71,6 +73,7 @@ CREATE TABLE IF NOT EXISTS bus_stops (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     bus_id INT UNSIGNED NOT NULL,
     stop_name VARCHAR(150) NOT NULL,
+    stop_offset_minutes INT UNSIGNED NOT NULL DEFAULT 0,
     sort_order INT UNSIGNED NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_bus_stops_bus FOREIGN KEY (bus_id) REFERENCES buses(id) ON DELETE CASCADE,

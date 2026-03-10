@@ -24,6 +24,17 @@ $busType = $selectedBus ? ($selectedBus['bus_type'] ?? 'Normal') : 'Normal';
 $busDescription = $selectedBus ? ($selectedBus['description'] ?? '') : '';
 $busImage = $selectedBus ? ($selectedBus['image_url'] ?? '') : '';
 $busImage = $busImage !== '' ? $busImage : 'https://images.unsplash.com/photo-tjbo7Vr04Xs?auto=format&fit=crop&w=1200&q=60';
+$busStartTime = $selectedBus['start_time'] ?? '';
+$busEndTime = $selectedBus['end_time'] ?? '';
+$busDuration = '';
+if ($busStartTime !== '' && $busEndTime !== '') {
+    $startMinutes = time_to_minutes($busStartTime);
+    $endMinutes = time_to_minutes($busEndTime);
+    if ($startMinutes !== null && $endMinutes !== null) {
+        $minutes = $endMinutes >= $startMinutes ? $endMinutes - $startMinutes : (24 * 60 - $startMinutes + $endMinutes);
+        $busDuration = format_duration_minutes($minutes);
+    }
+}
 $flashError = $_SESSION['booking_error'] ?? '';
 $old = $_SESSION['booking_old'] ?? [];
 
@@ -182,6 +193,16 @@ require_once __DIR__ . '/includes/header.php';
                     <span class="bus-detail-label">Seats</span>
                     <strong id="busDetailSeats"><?= (int) ($selectedBus ? $selectedBus['total_seats'] : 49) ?></strong>
                 </div>
+                <div class="bus-detail-row" id="busTimeRow" <?= $busStartTime || $busEndTime ? '' : 'style="display:none;"' ?>>
+                    <span class="bus-detail-label">Schedule</span>
+                    <strong id="busDetailTime">
+                        <?= $busStartTime ? h($busStartTime) : '-' ?> → <?= $busEndTime ? h($busEndTime) : '-' ?>
+                    </strong>
+                </div>
+                <div class="bus-detail-row" id="busDurationRow" style="<?= $busStartTime && $busEndTime ? '' : 'display:none;' ?>">
+                    <span class="bus-detail-label">Duration</span>
+                    <strong id="busDetailDuration"><?= h($busDuration) ?></strong>
+                </div>
                 <?php if ($busDescription !== ''): ?>
                     <p class="bus-detail-text" id="busDetailDesc"><?= h($busDescription) ?></p>
                 <?php endif; ?>
@@ -213,10 +234,12 @@ require_once __DIR__ . '/includes/header.php';
                 <span>Pickup Point</span>
                 <input type="text" name="pickup_point" value="<?= h($old['pickup_point'] ?? '') ?>" list="pickupStops" autocomplete="off" required>
             </label>
+            <small class="input-hint" id="pickupHint"></small>
             <label>
                 <span>Drop Location</span>
                 <input type="text" name="drop_location" value="<?= h($old['drop_location'] ?? '') ?>" list="dropStops" autocomplete="off" required>
             </label>
+            <small class="input-hint" id="dropHint"></small>
             <datalist id="pickupStops">
                 <?php foreach ($busStops as $stop): ?>
                     <option value="<?= h($stop) ?>"></option>
@@ -272,8 +295,44 @@ const detailRoute = document.getElementById('busDetailRoute');
 const detailSeats = document.getElementById('busDetailSeats');
 const detailDesc = document.getElementById('busDetailDesc');
 const detailCover = document.getElementById('busDetailCover');
+const detailTime = document.getElementById('busDetailTime');
+const detailTimeRow = document.getElementById('busTimeRow');
+const detailDurationRow = document.getElementById('busDurationRow');
+const detailDuration = document.getElementById('busDetailDuration');
 const bookingForm = document.getElementById('bookingForm');
 const busInactiveAlert = document.getElementById('busInactiveAlert');
+const pickupInput = document.querySelector('input[name="pickup_point"]');
+const dropInput = document.querySelector('input[name="drop_location"]');
+const pickupHint = document.getElementById('pickupHint');
+const dropHint = document.getElementById('dropHint');
+
+let stopOffsets = {};
+let busStartTime = '';
+let busEndTime = '';
+
+function timeToMinutes(time) {
+    if (!time) return null;
+    const parts = time.split(':');
+    const h = Number(parts[0] || 0);
+    const m = Number(parts[1] || 0);
+    return h * 60 + m;
+}
+
+function minutesToTime(minutes) {
+    const mins = ((minutes % (24 * 60)) + (24 * 60)) % (24 * 60);
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
+function formatDuration(minutes) {
+    if (minutes == null || Number.isNaN(minutes)) return '';
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    if (h > 0 && m > 0) return `${h}h ${m}m`;
+    if (h > 0) return `${h}h`;
+    return `${m}m`;
+}
 
 function setBusActiveState(isActive) {
     if (busInactiveAlert) {
@@ -310,6 +369,9 @@ async function loadStops(busId) {
         const stops = Array.isArray(data.stops) ? data.stops : [];
         const route = typeof data.route === 'string' ? data.route : '';
         const bus = data.bus || null;
+        stopOffsets = data.stop_offsets || {};
+        busStartTime = bus && bus.start_time ? bus.start_time : '';
+        busEndTime = bus && bus.end_time ? bus.end_time : '';
         const options = stops.map((stop) => `<option value="${stop}"></option>`).join('');
         pickupList.innerHTML = options;
         dropList.innerHTML = options;
@@ -326,6 +388,25 @@ async function loadStops(busId) {
             detailName.textContent = `${bus.name} (${bus.bus_number})`;
             detailType.textContent = bus.bus_type || 'Normal';
             detailSeats.textContent = bus.total_seats || 49;
+            if (detailTime && detailTimeRow) {
+                if (bus.start_time || bus.end_time) {
+                    detailTime.textContent = `${bus.start_time || '-'} → ${bus.end_time || '-'}`;
+                    detailTimeRow.style.display = 'flex';
+                } else {
+                    detailTimeRow.style.display = 'none';
+                }
+            }
+            if (detailDuration && detailDurationRow) {
+                const start = timeToMinutes(bus.start_time || '');
+                const end = timeToMinutes(bus.end_time || '');
+                if (start != null && end != null) {
+                    const duration = end >= start ? end - start : (24 * 60 - start + end);
+                    detailDuration.textContent = formatDuration(duration);
+                    detailDurationRow.style.display = 'flex';
+                } else {
+                    detailDurationRow.style.display = 'none';
+                }
+            }
             if (detailRoute) {
                 detailRoute.textContent = route || '';
                 detailRoute.parentElement.style.display = route ? 'flex' : 'none';
@@ -339,8 +420,35 @@ async function loadStops(busId) {
             }
         }
         setBusActiveState(!!bus && Number(bus.is_active) === 1);
+        updatePickupDropHints();
     } catch (e) {
         // ignore fetch errors
+    }
+}
+
+function updatePickupDropHints() {
+    if (!pickupHint || !dropHint) {
+        return;
+    }
+    const start = timeToMinutes(busStartTime);
+    if (start == null) {
+        pickupHint.textContent = '';
+        dropHint.textContent = '';
+        return;
+    }
+    const pickup = pickupInput ? pickupInput.value.trim() : '';
+    const drop = dropInput ? dropInput.value.trim() : '';
+    if (pickup && Object.prototype.hasOwnProperty.call(stopOffsets, pickup)) {
+        const minutes = start + Number(stopOffsets[pickup] || 0);
+        pickupHint.textContent = `Estimated pickup time: ${minutesToTime(minutes)}`;
+    } else {
+        pickupHint.textContent = '';
+    }
+    if (drop && Object.prototype.hasOwnProperty.call(stopOffsets, drop)) {
+        const minutes = start + Number(stopOffsets[drop] || 0);
+        dropHint.textContent = `Estimated drop time: ${minutesToTime(minutes)}`;
+    } else {
+        dropHint.textContent = '';
     }
 }
 
@@ -360,6 +468,13 @@ if (busSelect) {
         });
     }
     loadStops(busSelect.value);
+}
+
+if (pickupInput) {
+    pickupInput.addEventListener('input', updatePickupDropHints);
+}
+if (dropInput) {
+    dropInput.addEventListener('input', updatePickupDropHints);
 }
 </script>
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

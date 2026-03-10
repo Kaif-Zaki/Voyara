@@ -89,6 +89,7 @@ textarea {
 .inline-links,
 .hero-actions,
 .mini-stats,
+.hero-badges,
 .footer-grid,
 .cards-grid {
     display: flex;
@@ -173,6 +174,45 @@ textarea {
     align-items: center;
     padding: 0.5rem 0 1rem;
     min-height: 68vh;
+    position: relative;
+    overflow: hidden;
+}
+
+.home-hero.hero-image {
+    grid-template-columns: minmax(0, 0.62fr) minmax(0, 0.38fr);
+    padding: 5rem 0;
+    background:
+        linear-gradient(115deg, rgba(248, 250, 252, 0.98) 0%, rgba(248, 250, 252, 0.92) 42%, rgba(248, 250, 252, 0.6) 70%, rgba(248, 250, 252, 0.2) 100%),
+        linear-gradient(200deg, rgba(37, 99, 235, 0.12), rgba(14, 165, 233, 0.08) 40%, rgba(248, 250, 252, 0) 70%),
+        url("/assets/images/BusImage.avif") center/cover;
+    border-radius: 28px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    isolation: isolate;
+}
+
+.home-hero.hero-image .hero-copy {
+    padding: 2rem 2.5rem;
+    max-width: 520px;
+}
+
+.home-hero.hero-image::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 28px;
+    background:
+        radial-gradient(circle at 20% 20%, rgba(37, 99, 235, 0.12), transparent 45%),
+        radial-gradient(circle at 70% 30%, rgba(14, 165, 233, 0.12), transparent 40%);
+    z-index: 0;
+    pointer-events: none;
+}
+
+.home-hero.hero-image .hero-copy,
+.home-hero.hero-image .hero-actions,
+.home-hero.hero-image .mini-stats {
+    position: relative;
+    z-index: 1;
 }
 
 .page-hero,
@@ -210,6 +250,12 @@ textarea {
 .hero-copy {
     padding: 0.5rem 0.25rem;
     max-width: 620px;
+}
+
+.hero-badges {
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin: 0 0 1.1rem;
 }
 
 .hero-copy h1,
@@ -406,8 +452,9 @@ textarea {
     min-width: 120px;
     padding: 1rem 1.1rem;
     border-radius: var(--radius-lg);
-    background: color-mix(in srgb, var(--surface-strong) 80%, transparent);
+    background: rgba(255, 255, 255, 0.9);
     border: 1px solid var(--border);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
 }
 
 .mini-stats strong {
@@ -529,10 +576,12 @@ textarea {
 }
 
 .cta-strip {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
+    gap: 1.5rem;
+    padding: 2rem 2.2rem;
+    text-align: left;
 }
 
 .hero-visual {
@@ -709,6 +758,12 @@ textarea {
     line-height: 1.6;
 }
 
+.input-hint {
+    margin: -0.2rem 0 0.2rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
 .glass-panel,
 .booking-form-panel {
     background: color-mix(in srgb, var(--surface-strong) 78%, transparent);
@@ -749,6 +804,7 @@ textarea:focus {
 .inline-links {
     align-items: center;
     flex-wrap: wrap;
+    row-gap: 0.6rem;
 }
 
 .legend {
@@ -980,6 +1036,25 @@ td {
     text-align: left;
     border-bottom: 1px solid rgba(20, 52, 122, 0.08);
     vertical-align: top;
+}
+
+.table-wrap td .inline-form {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    flex-wrap: wrap;
+}
+
+.table-wrap td .inline-form + .inline-form {
+    margin-top: 0.55rem;
+}
+
+.inline-form select {
+    min-width: 140px;
+}
+
+.inline-form .button {
+    white-space: nowrap;
 }
 
 .status-chip {
@@ -1428,12 +1503,23 @@ td {
 
     .page-hero.compact,
     .cta-strip {
-        flex-direction: column;
+        grid-template-columns: 1fr;
         align-items: start;
     }
 
     .home-hero {
         min-height: auto;
+    }
+
+    .home-hero.hero-image {
+        grid-template-columns: 1fr;
+        padding: 3.5rem 1.5rem;
+        background-position: center right;
+    }
+
+    .home-hero.hero-image .hero-copy {
+        padding: 0;
+        max-width: none;
     }
 
     .footer2-top {

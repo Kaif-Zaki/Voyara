@@ -62,26 +62,36 @@ require_once __DIR__ . '/../includes/header.php';
                             <input type="text" name="image_url" placeholder="Paste image URL">
                         </label>
                     </div>
-                    <div class="grid-two">
-                        <label>
-                            <span>Route From (Origin)</span>
-                            <input type="text" name="origin" placeholder="e.g., Colombo">
-                        </label>
-                        <label>
-                            <span>Route To (Destination)</span>
-                            <input type="text" name="destination" placeholder="e.g., Kandy">
-                        </label>
-                    </div>
-                    <div class="grid-two">
-                        <label>
-                            <span>Bus Details (optional)</span>
-                            <textarea name="description" rows="3" placeholder="e.g., AC, WiFi, Recliner seats"></textarea>
-                        </label>
-                        <label>
-                            <span>Bus Stops (one per line)</span>
-                            <textarea name="stops" rows="3" placeholder="Enter stop names"></textarea>
-                        </label>
-                    </div>
+            <div class="grid-two">
+                <label>
+                    <span>Route From (Origin)</span>
+                    <input type="text" name="origin" placeholder="e.g., Colombo">
+                </label>
+                <label>
+                    <span>Route To (Destination)</span>
+                    <input type="text" name="destination" placeholder="e.g., Kandy">
+                </label>
+            </div>
+            <div class="grid-two">
+                <label>
+                    <span>Start Time</span>
+                    <input type="time" name="start_time">
+                </label>
+                <label>
+                    <span>End Time</span>
+                    <input type="time" name="end_time">
+                </label>
+            </div>
+            <div class="grid-two">
+                <label>
+                    <span>Bus Details (optional)</span>
+                    <textarea name="description" rows="3" placeholder="e.g., AC, WiFi, Recliner seats"></textarea>
+                </label>
+                <label>
+                    <span>Bus Stops (one per line, optional minutes)</span>
+                    <textarea name="stops" rows="3" placeholder="Example: Colombo | 0&#10;Kadawatha | 30&#10;Kandy | 240"></textarea>
+                </label>
+            </div>
                     <div class="inline-form">
                         <input type="hidden" name="is_active" value="0">
                         <label class="inline-switch">
@@ -96,13 +106,14 @@ require_once __DIR__ . '/../includes/header.php';
 
         <?php foreach ($buses as $bus): ?>
             <?php
-            $stops = get_bus_stops((int) $bus['id']);
-            $stopsText = implode("\n", $stops);
-            $routeLabel = get_bus_route_label($bus);
-            $busType = $bus['bus_type'] ?? 'Normal';
-            $isActive = (int) ($bus['is_active'] ?? 1) === 1;
-            $stopCount = count($stops);
-            ?>
+        $stopsText = get_bus_stops_lines((int) $bus['id']);
+        $routeLabel = get_bus_route_label($bus);
+        $busType = $bus['bus_type'] ?? 'Normal';
+        $isActive = (int) ($bus['is_active'] ?? 1) === 1;
+        $stopCount = $stopsText === '' ? 0 : substr_count($stopsText, "\n") + 1;
+        $startTime = $bus['start_time'] ?? '';
+        $endTime = $bus['end_time'] ?? '';
+        ?>
             <details class="bus-accordion">
                 <summary>
                     <div class="summary-main">
@@ -159,13 +170,23 @@ require_once __DIR__ . '/../includes/header.php';
                                 <input type="text" name="destination" value="<?= h($bus['destination'] ?? '') ?>" placeholder="e.g., Kandy">
                             </label>
                         </div>
+                        <div class="grid-two">
+                            <label>
+                                <span>Start Time</span>
+                                <input type="time" name="start_time" value="<?= h($startTime) ?>">
+                            </label>
+                            <label>
+                                <span>End Time</span>
+                                <input type="time" name="end_time" value="<?= h($endTime) ?>">
+                            </label>
+                        </div>
                         <label>
                             <span>Bus Details (optional)</span>
                             <textarea name="description" rows="3" placeholder="e.g., AC, WiFi, Recliner seats"><?= h($bus['description'] ?? '') ?></textarea>
                         </label>
                         <label>
-                            <span>Bus Stops (one per line)</span>
-                            <textarea name="stops" rows="6" placeholder="Enter stop names"><?= h($stopsText) ?></textarea>
+                            <span>Bus Stops (one per line, optional minutes)</span>
+                            <textarea name="stops" rows="6" placeholder="Example: Colombo | 0&#10;Kadawatha | 30&#10;Kandy | 240"><?= h($stopsText) ?></textarea>
                         </label>
                         <div class="inline-form">
                             <input type="hidden" name="is_active" value="0">

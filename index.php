@@ -6,31 +6,24 @@ $pageTitle = 'Voyara';
 
 require_once __DIR__ . '/includes/header.php';
 ?>
-<section class="home-hero">
+<section class="home-hero hero-image">
     <div class="hero-copy">
         <p class="eyebrow">Voyara bus booking</p>
         <h1>Seat booking that stays simple.</h1>
         <p class="lead">See live seat availability, pick seats by date, and send your request directly to admin through WhatsApp.</p>
+        <div class="hero-badges">
+            <span class="pill">10+ bookings</span>
+            <span class="pill">Fast and smooth</span>
+            <span class="pill">No login needed</span>
+        </div>
         <div class="hero-actions">
             <a class="button" href="/booking.php">Book Now</a>
             <a class="button secondary" href="/about.php">About Us</a>
         </div>
-        <div class="mini-stats">
-            <div>
-                <strong>2</strong>
-                <span>Buses</span>
-            </div>
-            <div>
-                <strong>49</strong>
-                <span>Seats each</span>
-            </div>
-            <div>
-                <strong>0</strong>
-                <span>Login needed</span>
-            </div>
-        </div>
     </div>
+</section>
 
+<section class="section-block">
     <div class="hero-card feature-panel">
         <div class="hero-visual">
             <div class="hero-visual-header">

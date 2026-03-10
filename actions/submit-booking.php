@@ -157,7 +157,7 @@ $message = implode("\n", $messageLines);
 
 unset($_SESSION['booking_old']);
 
-$whatsAppNumber = preg_replace('/\D+/', '', ADMIN_WHATSAPP_NUMBER) ?? '';
-$whatsAppUrl = 'https://api.whatsapp.com/send?phone=' . $whatsAppNumber . '&text=' . rawurlencode($message);
+$whatsAppNumber = normalize_phone_number((string) ADMIN_WHATSAPP_NUMBER);
+$whatsAppUrl = 'https://wa.me/' . $whatsAppNumber . '?text=' . rawurlencode($message);
 header('Location: ' . $whatsAppUrl);
 exit;
