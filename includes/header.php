@@ -46,12 +46,6 @@ $pendingRequests = $isAdminArea ? get_pending_requests_count() : 0;
                         <span class="notify-badge"><?= (int) $pendingRequests ?></span>
                     <?php endif; ?>
                 </a>
-                <a class="admin-profile <?= is_active_path('/admin/profile.php') ? 'active' : '' ?>" href="/admin/profile.php" aria-label="Admin Profile">
-                    <span class="sr-only">Admin Profile</span>
-                    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-                        <path fill="currentColor" d="M12 12a4 4 0 1 0-4-4a4 4 0 0 0 4 4Zm0 2c-3.33 0-8 1.67-8 5v1h16v-1c0-3.33-4.67-5-8-5Z"/>
-                    </svg>
-                </a>
             </nav>
         <?php else: ?>
             <nav class="top-nav" id="mobileNav">
