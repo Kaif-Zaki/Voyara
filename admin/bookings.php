@@ -8,7 +8,11 @@ require_once __DIR__ . '/../includes/functions.php';
 require_admin();
 
 $travelDate = selected_date_or_today(request_value('travel_date'));
-$bookings = get_date_bookings($travelDate);
+$busId = (int) request_value('bus_id');
+$statusFilter = request_value('status');
+$bookings = get_date_bookings($travelDate, $busId ?: null, $statusFilter !== '' ? $statusFilter : null);
+$requestCount = count($bookings);
+$buses = get_buses();
 $pageTitle = 'Booking Requests';
 $isAdminArea = true;
 
@@ -18,7 +22,7 @@ require_once __DIR__ . '/../includes/header.php';
     <div class="split-row">
         <div>
             <p class="eyebrow">Admin panel</p>
-            <h1>Booking Requests</h1>
+            <h1>Booking Requests <span class="count-badge"><?= (int) $requestCount ?></span></h1>
         </div>
         <div class="inline-links">
             <a class="button secondary" href="/admin/seats.php?travel_date=<?= h($travelDate) ?>">Manage Seats</a>
@@ -30,6 +34,26 @@ require_once __DIR__ . '/../includes/header.php';
         <label>
             <span>Travel Date</span>
             <input type="date" name="travel_date" value="<?= h($travelDate) ?>" required>
+        </label>
+        <label>
+            <span>Bus</span>
+            <select name="bus_id">
+                <option value="">All buses</option>
+                <?php foreach ($buses as $bus): ?>
+                    <option value="<?= (int) $bus['id'] ?>" <?= (int) $bus['id'] === $busId ? 'selected' : '' ?>>
+                        <?= h($bus['name']) ?> (<?= h($bus['bus_number']) ?>)
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </label>
+        <label>
+            <span>Status</span>
+            <select name="status">
+                <option value="">All</option>
+                <option value="available" <?= $statusFilter === 'available' ? 'selected' : '' ?>>Available</option>
+                <option value="pending" <?= $statusFilter === 'pending' ? 'selected' : '' ?>>Pending</option>
+                <option value="booked" <?= $statusFilter === 'booked' ? 'selected' : '' ?>>Booked</option>
+            </select>
         </label>
         <button type="submit" class="button">Load</button>
     </form>

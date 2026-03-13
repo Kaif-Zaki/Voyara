@@ -8,6 +8,7 @@ require_once __DIR__ . '/functions.php';
 $pageTitle = $pageTitle ?? APP_NAME;
 $isAdminArea = $isAdminArea ?? false;
 $bodyClass = $bodyClass ?? ($isAdminArea ? 'admin-shell' : 'public-shell');
+$pendingRequests = $isAdminArea ? get_pending_requests_count() : 0;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -30,6 +31,16 @@ $bodyClass = $bodyClass ?? ($isAdminArea ? 'admin-shell' : 'public-shell');
                 <a class="<?= is_active_path('/admin/dashboard.php') ? 'active' : '' ?>" href="/admin/dashboard.php">Admin Panel</a>
                 <a class="<?= is_active_path('/admin/seats.php') ? 'active' : '' ?>" href="/admin/seats.php">Seats</a>
                 <a class="<?= is_active_path('/admin/buses.php') ? 'active' : '' ?>" href="/admin/buses.php">Buses</a>
+                <a class="admin-notify <?= is_active_path('/admin/bookings.php') ? 'active' : '' ?>" href="/admin/bookings.php" aria-label="Booking requests">
+                    <span class="admin-notify-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" width="18" height="18">
+                            <path fill="currentColor" d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22Zm7-6V11a7 7 0 1 0-14 0v5l-2 2v1h18v-1l-2-2Z"/>
+                        </svg>
+                    </span>
+                    <?php if ($pendingRequests > 0): ?>
+                        <span class="notify-badge"><?= (int) $pendingRequests ?></span>
+                    <?php endif; ?>
+                </a>
                 <a class="<?= is_active_path('/admin/login.php') ? 'active' : '' ?>" href="/admin/login.php">Admin</a>
             </nav>
         <?php else: ?>

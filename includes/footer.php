@@ -31,11 +31,6 @@ $isAdminArea = $isAdminArea ?? false;
                                 <span>hello@voyara.lk</span>
                             </div>
                         </div>
-                        <form class="footer2-newsletter" action="#" method="post" onsubmit="return false">
-                            <label class="sr-only" for="newsletterEmail">Email</label>
-                            <input id="newsletterEmail" type="email" placeholder="Enter your e-mail" autocomplete="email">
-                            <button type="submit">Send</button>
-                        </form>
                     </section>
 
                     <section class="footer2-col">

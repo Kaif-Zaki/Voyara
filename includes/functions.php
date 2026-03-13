@@ -330,8 +330,23 @@ function seats_by_number(array $seatsWithStatus): array
     return $byNumber;
 }
 
-function get_date_bookings(string $travelDate): array
+function get_date_bookings(string $travelDate, ?int $busId = null, ?string $status = null): array
 {
+    $filters = [];
+    $params = ['travel_date' => $travelDate];
+
+    if ($busId && $busId > 0) {
+        $filters[] = 'b.bus_id = :bus_id';
+        $params['bus_id'] = $busId;
+    }
+
+    if ($status && in_array($status, ['pending', 'booked', 'available'], true)) {
+        $filters[] = 'b.status = :status';
+        $params['status'] = $status;
+    }
+
+    $whereExtra = $filters ? ' AND ' . implode(' AND ', $filters) : '';
+
     $sql = "
         SELECT
             b.id,
@@ -351,12 +366,13 @@ function get_date_bookings(string $travelDate): array
         INNER JOIN booking_seats bs ON bs.booking_id = b.id
         INNER JOIN seats s ON s.id = bs.seat_id
         WHERE b.travel_date = :travel_date
+        $whereExtra
         GROUP BY b.id
         ORDER BY b.created_at DESC
     ";
 
     $stmt = db()->prepare($sql);
-    $stmt->execute(['travel_date' => $travelDate]);
+    $stmt->execute($params);
 
     return $stmt->fetchAll();
 }
@@ -405,6 +421,13 @@ function get_booking_details(int $bookingId): ?array
     $booking = $stmt->fetch();
 
     return $booking ?: null;
+}
+
+function get_pending_requests_count(): int
+{
+    $stmt = db()->query("SELECT COUNT(*) AS total FROM bookings WHERE status = 'pending'");
+    $row = $stmt->fetch();
+    return (int) ($row['total'] ?? 0);
 }
 
 function status_label(string $status): string

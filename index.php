@@ -6,7 +6,7 @@ $pageTitle = 'Voyara';
 
 require_once __DIR__ . '/includes/header.php';
 ?>
-<section class="home-hero hero-image">
+<section class="home-hero hero-image hero-split">
     <div class="hero-copy">
         <p class="eyebrow">Voyara bus booking</p>
         <h1>Seat booking that stays simple.</h1>
@@ -19,6 +19,16 @@ require_once __DIR__ . '/includes/header.php';
         <div class="hero-actions">
             <a class="button" href="/booking.php">Book Now</a>
             <a class="button secondary" href="/about.php">About Us</a>
+        </div>
+    </div>
+    <div class="hero-media" aria-hidden="true">
+        <div class="hero-media-card">
+            <small>Live seats</small>
+            <strong>Green = Available</strong>
+        </div>
+        <div class="hero-media-card secondary">
+            <small>WhatsApp</small>
+            <strong>Instant request</strong>
         </div>
     </div>
 </section>
