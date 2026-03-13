@@ -52,9 +52,19 @@ $pendingRequests = $isAdminArea ? get_pending_requests_count() : 0;
             <nav class="top-nav">
                 <a class="<?= is_active_path('/index.php') ? 'active' : '' ?>" href="/index.php">Home</a>
                 <a class="<?= is_active_path('/booking.php') ? 'active' : '' ?>" href="/booking.php">Book Now</a>
-                <a class="<?= is_active_path('/about.php') ? 'active' : '' ?>" href="/about.php">About</a>
-                <a class="<?= is_active_path('/faq.php') ? 'active' : '' ?>" href="/faq.php">FAQ</a>
                 <a class="<?= is_active_path('/contact.php') ? 'active' : '' ?>" href="/contact.php">Contact</a>
+                <button type="button" class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+                    <span class="theme-toggle-icon" data-theme-icon="sun" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" width="16" height="16">
+                            <path fill="currentColor" d="M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12Zm0-16a1 1 0 0 1 1 1v2a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1Zm0 18a1 1 0 0 1 1 1v0a1 1 0 1 1-2 0 1 1 0 0 1 1-1Zm10-8a1 1 0 0 1-1 1h-2a1 1 0 1 1 0-2h2a1 1 0 0 1 1 1ZM5 12a1 1 0 0 1-1 1H2a1 1 0 1 1 0-2h2a1 1 0 0 1 1 1Zm13.66 6.66a1 1 0 0 1-1.42 1.42l-1.42-1.42a1 1 0 0 1 1.42-1.42l1.42 1.42Zm-12.48-12.5a1 1 0 0 1-1.42 0L3.34 4.74a1 1 0 1 1 1.42-1.42l1.42 1.42a1 1 0 0 1 0 1.42Zm12.48-1.42a1 1 0 0 1 0 1.42l-1.42 1.42a1 1 0 1 1-1.42-1.42l1.42-1.42a1 1 0 0 1 1.42 0ZM6.76 19.66a1 1 0 0 1-1.42 0l-1.42-1.42a1 1 0 1 1 1.42-1.42l1.42 1.42a1 1 0 0 1 0 1.42Z"/>
+                        </svg>
+                    </span>
+                    <span class="theme-toggle-icon" data-theme-icon="moon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" width="16" height="16">
+                            <path fill="currentColor" d="M21 14.5A8.5 8.5 0 0 1 9.5 3a1 1 0 0 0-1.26 1.26A6.5 6.5 0 1 0 19.74 15.76 1 1 0 0 0 21 14.5Z"/>
+                        </svg>
+                    </span>
+                </button>
                 <a class="nav-cta" href="/admin/login.php">Admin</a>
             </nav>
         <?php endif; ?>

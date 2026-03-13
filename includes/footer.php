@@ -68,5 +68,6 @@ $isAdminArea = $isAdminArea ?? false;
         </div>
     </footer>
 <?php endif; ?>
+<script src="/assets/js/theme.js"></script>
 </body>
 </html>
