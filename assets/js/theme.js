@@ -1,6 +1,9 @@
 (function () {
     const root = document.documentElement;
     const toggle = document.getElementById('themeToggle');
+    const navToggle = document.querySelector('.nav-toggle');
+    const nav = document.getElementById('mobileNav');
+    const navBackdrop = document.querySelector('[data-nav-backdrop]');
     const stored = localStorage.getItem('voyara-theme');
 
     function applyTheme(theme) {
@@ -38,6 +41,27 @@
             root.setAttribute('data-theme', next);
             localStorage.setItem('voyara-theme', next);
             updateIcon();
+        });
+    }
+
+    if (navToggle && nav) {
+        navToggle.addEventListener('click', () => {
+            const isOpen = document.body.classList.toggle('nav-open');
+            navToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        });
+
+        nav.querySelectorAll('a, button').forEach((item) => {
+            item.addEventListener('click', () => {
+                document.body.classList.remove('nav-open');
+                navToggle.setAttribute('aria-expanded', 'false');
+            });
+        });
+    }
+
+    if (navBackdrop && navToggle) {
+        navBackdrop.addEventListener('click', () => {
+            document.body.classList.remove('nav-open');
+            navToggle.setAttribute('aria-expanded', 'false');
         });
     }
 

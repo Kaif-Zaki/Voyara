@@ -26,8 +26,13 @@ $pendingRequests = $isAdminArea ? get_pending_requests_count() : 0;
         <a class="brand" href="/index.php" aria-label="Voyara home">
             <img src="/assets/images/SiteLogo.png" alt="Voyara logo">
         </a>
+        <button class="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mobileNav">
+            <span class="nav-toggle-bar"></span>
+            <span class="nav-toggle-bar"></span>
+            <span class="nav-toggle-bar"></span>
+        </button>
         <?php if ($isAdminArea): ?>
-            <nav class="top-nav admin-nav">
+            <nav class="top-nav admin-nav" id="mobileNav">
                 <a class="<?= is_active_path('/admin/dashboard.php') ? 'active' : '' ?>" href="/admin/dashboard.php">Admin Panel</a>
                 <a class="<?= is_active_path('/admin/seats.php') ? 'active' : '' ?>" href="/admin/seats.php">Seats</a>
                 <a class="<?= is_active_path('/admin/buses.php') ? 'active' : '' ?>" href="/admin/buses.php">Buses</a>
@@ -49,7 +54,7 @@ $pendingRequests = $isAdminArea ? get_pending_requests_count() : 0;
                 </a>
             </nav>
         <?php else: ?>
-            <nav class="top-nav">
+            <nav class="top-nav" id="mobileNav">
                 <a class="<?= is_active_path('/index.php') ? 'active' : '' ?>" href="/index.php">Home</a>
                 <a class="<?= is_active_path('/booking.php') ? 'active' : '' ?>" href="/booking.php">Book Now</a>
                 <a class="<?= is_active_path('/contact.php') ? 'active' : '' ?>" href="/contact.php">Contact</a>
@@ -69,5 +74,6 @@ $pendingRequests = $isAdminArea ? get_pending_requests_count() : 0;
             </nav>
         <?php endif; ?>
     </div>
+    <div class="nav-backdrop" data-nav-backdrop aria-hidden="true"></div>
 </header>
 <main class="container page-content">
