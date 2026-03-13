@@ -74,11 +74,15 @@ CREATE TABLE IF NOT EXISTS bus_stops (
     bus_id INT UNSIGNED NOT NULL,
     stop_name VARCHAR(150) NOT NULL,
     stop_offset_minutes INT UNSIGNED NOT NULL DEFAULT 0,
+    stop_time TIME NULL,
     sort_order INT UNSIGNED NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_bus_stops_bus FOREIGN KEY (bus_id) REFERENCES buses(id) ON DELETE CASCADE,
     CONSTRAINT uq_bus_stop UNIQUE (bus_id, stop_name)
 );
+
+-- Migration helper (run on existing DBs if needed):
+-- ALTER TABLE bus_stops ADD COLUMN stop_time TIME NULL AFTER stop_offset_minutes;
 
 INSERT INTO admins (username, password_hash)
 VALUES ('admin', '$2y$10$2PKTg2IqySDovY3JtbiPIe1QHmHE.KK8ZnNii7wNQSqEBuCDEkrnS');

@@ -9,6 +9,7 @@ $stops = [];
 $route = '';
 $bus = null;
 $stopOffsets = [];
+$stopTimes = [];
 
 if ($busId > 0) {
     $bus = get_bus_by_id($busId);
@@ -16,9 +17,21 @@ if ($busId > 0) {
         $route = get_bus_route_label($bus);
     }
     $stopRows = get_bus_stops_with_offsets($busId);
+    $startTime = $bus['start_time'] ?? '';
     foreach ($stopRows as $row) {
         $stops[] = $row['stop_name'];
-        $stopOffsets[$row['stop_name']] = (int) ($row['stop_offset_minutes'] ?? 0);
+        $stopTime = $row['stop_time'] ?? '';
+        if ($stopTime !== '') {
+            $stopTimes[$row['stop_name']] = $stopTime;
+        }
+        $offset = (int) ($row['stop_offset_minutes'] ?? 0);
+        if ($stopTime !== '') {
+            $computed = compute_offset_minutes($startTime, $stopTime);
+            if ($computed !== null) {
+                $offset = $computed;
+            }
+        }
+        $stopOffsets[$row['stop_name']] = $offset;
     }
 }
 
@@ -27,5 +40,6 @@ echo json_encode([
     'stops' => $stops,
     'route' => $route,
     'stop_offsets' => $stopOffsets,
+    'stop_times' => $stopTimes,
     'bus' => $bus,
 ], JSON_UNESCAPED_UNICODE);

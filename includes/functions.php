@@ -67,7 +67,7 @@ function get_bus_stops(int $busId): array
 
 function get_bus_stops_with_offsets(int $busId): array
 {
-    $stmt = db()->prepare('SELECT stop_name, stop_offset_minutes FROM bus_stops WHERE bus_id = :bus_id ORDER BY sort_order ASC, id ASC');
+    $stmt = db()->prepare('SELECT stop_name, stop_offset_minutes, stop_time FROM bus_stops WHERE bus_id = :bus_id ORDER BY sort_order ASC, id ASC');
     $stmt->execute(['bus_id' => $busId]);
     return $stmt->fetchAll();
 }
@@ -79,7 +79,10 @@ function get_bus_stops_lines(int $busId): string
     foreach ($stops as $stop) {
         $name = $stop['stop_name'];
         $offset = (int) ($stop['stop_offset_minutes'] ?? 0);
-        if ($offset > 0) {
+        $stopTime = $stop['stop_time'] ?? '';
+        if ($stopTime !== '') {
+            $lines[] = $name . ' | ' . $stopTime;
+        } elseif ($offset > 0) {
             $lines[] = $name . ' | ' . $offset;
         } else {
             $lines[] = $name;
@@ -96,6 +99,131 @@ function get_stop_offsets_map(int $busId): array
         $map[$stop['stop_name']] = (int) ($stop['stop_offset_minutes'] ?? 0);
     }
     return $map;
+}
+
+function get_stop_times_map(int $busId): array
+{
+    $stops = get_bus_stops_with_offsets($busId);
+    $map = [];
+    foreach ($stops as $stop) {
+        $value = $stop['stop_time'] ?? '';
+        if ($value !== '') {
+            $map[$stop['stop_name']] = $value;
+        }
+    }
+    return $map;
+}
+
+function normalize_stop_time(?string $value): ?string
+{
+    if ($value === null || trim($value) === '') {
+        return null;
+    }
+    $value = trim($value);
+    if (!preg_match('/^([01]?\d|2[0-3]):([0-5]\d)$/', $value, $matches)) {
+        return null;
+    }
+    $hours = str_pad($matches[1], 2, '0', STR_PAD_LEFT);
+    return $hours . ':' . $matches[2];
+}
+
+function compute_offset_minutes(?string $startTime, ?string $stopTime): ?int
+{
+    $start = time_to_minutes($startTime);
+    $stop = time_to_minutes($stopTime);
+    if ($start === null || $stop === null) {
+        return null;
+    }
+    return $stop >= $start ? $stop - $start : (24 * 60 - $start + $stop);
+}
+
+function parse_bus_stop_lines(string $stopsRaw, ?string $startTime = null): array
+{
+    $stops = preg_split('/\r\n|\r|\n/', $stopsRaw) ?: [];
+    $entries = [];
+    $seen = [];
+
+    foreach ($stops as $stop) {
+        $stop = trim($stop);
+        if ($stop === '') {
+            continue;
+        }
+        $parts = array_map('trim', explode('|', $stop));
+        $name = $parts[0] ?? '';
+        if ($name === '') {
+            continue;
+        }
+        if (array_key_exists($name, $seen)) {
+            continue;
+        }
+        $seen[$name] = true;
+
+        $offset = 0;
+        $stopTime = null;
+        if (isset($parts[1]) && $parts[1] !== '') {
+            $maybeTime = normalize_stop_time($parts[1]);
+            if ($maybeTime !== null) {
+                $stopTime = $maybeTime;
+                $computed = compute_offset_minutes($startTime, $stopTime);
+                if ($computed !== null) {
+                    $offset = $computed;
+                }
+            } else {
+                $offset = max(0, (int) $parts[1]);
+            }
+        }
+
+        $entries[] = [
+            'name' => $name,
+            'offset' => $offset,
+            'stop_time' => $stopTime,
+        ];
+    }
+
+    return $entries;
+}
+
+function store_bus_image(array $file): ?string
+{
+    if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+        return null;
+    }
+    if (!isset($file['tmp_name']) || !is_uploaded_file($file['tmp_name'])) {
+        return null;
+    }
+
+    $finfo = new finfo(FILEINFO_MIME_TYPE);
+    $mime = $finfo->file($file['tmp_name']);
+    $allowed = [
+        'image/jpeg' => 'jpg',
+        'image/png' => 'png',
+        'image/webp' => 'webp',
+        'image/gif' => 'gif',
+        'image/avif' => 'avif',
+    ];
+    if (!isset($allowed[$mime])) {
+        return null;
+    }
+
+    $directory = __DIR__ . '/../assets/uploads/buses';
+    if (!is_dir($directory)) {
+        mkdir($directory, 0755, true);
+    }
+
+    try {
+        $suffix = bin2hex(random_bytes(4));
+    } catch (Throwable $exception) {
+        $suffix = (string) time();
+    }
+
+    $filename = 'bus_' . date('Ymd_His') . '_' . $suffix . '.' . $allowed[$mime];
+    $targetPath = $directory . '/' . $filename;
+
+    if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
+        return null;
+    }
+
+    return '/assets/uploads/buses/' . $filename;
 }
 
 function time_to_minutes(?string $time): ?int
@@ -438,4 +566,41 @@ function status_label(string $status): string
         'available' => 'Available',
         default => 'Available',
     };
+}
+
+function get_admin_by_id(int $adminId): ?array
+{
+    $stmt = db()->prepare('SELECT id, username, password_hash FROM admins WHERE id = :id LIMIT 1');
+    $stmt->execute(['id' => $adminId]);
+    $admin = $stmt->fetch();
+    return $admin ?: null;
+}
+
+function is_username_taken(string $username, int $excludeId = 0): bool
+{
+    $stmt = db()->prepare('SELECT id FROM admins WHERE username = :username LIMIT 1');
+    $stmt->execute(['username' => $username]);
+    $row = $stmt->fetch();
+    if (!$row) {
+        return false;
+    }
+    return (int) $row['id'] !== $excludeId;
+}
+
+function update_admin_profile(int $adminId, string $username, ?string $newPassword = null): bool
+{
+    if ($newPassword !== null && $newPassword !== '') {
+        $stmt = db()->prepare('UPDATE admins SET username = :username, password_hash = :password_hash WHERE id = :id');
+        return $stmt->execute([
+            'username' => $username,
+            'password_hash' => password_hash($newPassword, PASSWORD_DEFAULT),
+            'id' => $adminId,
+        ]);
+    }
+
+    $stmt = db()->prepare('UPDATE admins SET username = :username WHERE id = :id');
+    return $stmt->execute([
+        'username' => $username,
+        'id' => $adminId,
+    ]);
 }

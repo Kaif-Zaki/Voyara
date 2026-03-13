@@ -24,7 +24,7 @@ require_once __DIR__ . '/includes/header.php';
     <div class="hero-media" aria-hidden="true">
         <div class="hero-media-card">
             <small>Live seats</small>
-            <strong>Green = Available</strong>
+            <strong>Available</strong>
         </div>
         <div class="hero-media-card secondary">
             <small>WhatsApp</small>

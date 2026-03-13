@@ -104,6 +104,11 @@ textarea {
     justify-content: space-between;
 }
 
+.header-row {
+    flex-wrap: wrap;
+    row-gap: 0.75rem;
+}
+
 .brand {
     display: inline-flex;
     align-items: center;
@@ -125,6 +130,9 @@ textarea {
     align-items: center;
     gap: 0.35rem;
     flex-wrap: wrap;
+    justify-content: flex-end;
+    flex: 1 1 auto;
+    min-width: 0;
 }
 
 .top-nav a {
@@ -134,6 +142,11 @@ textarea {
     font-size: 0.95rem;
     font-weight: 500;
     transition: background-color 0.22s ease, color 0.22s ease, transform 0.22s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-height: 40px;
+    line-height: 1;
 }
 
 .admin-notify {
@@ -142,6 +155,19 @@ textarea {
     align-items: center;
     justify-content: center;
     padding: 0.55rem 0.65rem;
+}
+
+.admin-notify,
+.admin-profile {
+    min-height: 40px;
+}
+
+.admin-profile {
+    padding: 0.55rem 0.65rem;
+}
+
+.admin-profile svg {
+    display: block;
 }
 
 .admin-notify-icon {
@@ -373,6 +399,7 @@ textarea {
     cursor: pointer;
     transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
     font-weight: 700;
+    line-height: 1.1;
 }
 
 .button:hover {
@@ -867,6 +894,30 @@ textarea {
     font-size: 0.9rem;
 }
 
+.input-label {
+    display: block;
+    color: var(--muted);
+    font-size: 0.92rem;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+}
+
+.stops-builder {
+    display: grid;
+    gap: 0.6rem;
+}
+
+.stops-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 160px auto;
+    gap: 0.6rem;
+    align-items: center;
+}
+
+.stops-row input[type="time"] {
+    min-width: 140px;
+}
+
 .glass-panel,
 .booking-form-panel {
     background: color-mix(in srgb, var(--surface-strong) 78%, transparent);
@@ -908,6 +959,19 @@ textarea:focus {
     align-items: center;
     flex-wrap: wrap;
     row-gap: 0.6rem;
+}
+
+.inline-form {
+    align-items: flex-end;
+}
+
+.inline-form label {
+    flex: 1 1 180px;
+    min-width: 160px;
+}
+
+.inline-form .button {
+    min-height: 44px;
 }
 
 .legend {
@@ -1148,6 +1212,11 @@ td {
     flex-wrap: wrap;
 }
 
+.table-wrap .inline-form label {
+    flex: 0 0 auto;
+    min-width: auto;
+}
+
 .table-wrap td .inline-form + .inline-form {
     margin-top: 0.55rem;
 }
@@ -1199,6 +1268,15 @@ td {
     gap: 0.6rem;
     font-weight: 600;
     color: var(--muted);
+}
+
+.inline-links {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.inline-links .button {
+    min-height: 40px;
 }
 
 .inline-switch input {
@@ -1508,6 +1586,20 @@ td {
     .hero-media-card {
         background: rgba(15, 23, 42, 0.85);
         border-color: rgba(148, 163, 184, 0.2);
+        color: var(--text);
+    }
+
+    .hero-media-card.secondary {
+        background: rgba(15, 23, 42, 0.72);
+        border-color: rgba(148, 163, 184, 0.18);
+    }
+
+    .hero-media-card small {
+        color: rgba(230, 238, 252, 0.7);
+    }
+
+    .hero-media-card strong {
+        color: #f8fafc;
     }
 
     .feature-panel::before {
@@ -1640,6 +1732,27 @@ td {
 }
 
 @media (max-width: 960px) {
+    .header-row,
+    .split-row {
+        align-items: flex-start;
+        gap: 0.85rem;
+    }
+
+    .top-nav {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .inline-links {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .inline-form label {
+        flex: 1 1 100%;
+        min-width: 0;
+    }
+
     .home-hero,
     .grid-two,
     .cards-grid.two-up,
@@ -1682,12 +1795,20 @@ td {
 }
 
 @media (max-width: 700px) {
+    .page-content {
+        padding: 3.5rem 0;
+    }
+
     .top-nav {
         gap: 0.15rem;
     }
 
     .top-nav a {
         padding: 0.55rem 0.75rem;
+    }
+
+    .table-wrap table {
+        min-width: 720px;
     }
 
     .hero-copy h1,
@@ -1716,6 +1837,10 @@ td {
 
     .bus-seat-row.is-back {
         grid-template-columns: repeat(5, minmax(48px, 1fr));
+    }
+
+    .stops-row {
+        grid-template-columns: 1fr;
     }
 
     .chart-grid {

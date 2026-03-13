@@ -37,7 +37,7 @@ require_once __DIR__ . '/../includes/header.php';
                 </div>
             </summary>
             <div class="bus-accordion-body">
-                <form method="post" action="/actions/create-bus.php" class="stack-md">
+                <form method="post" action="/actions/create-bus.php" class="stack-md" enctype="multipart/form-data">
                     <div class="grid-two">
                         <label>
                             <span>Bus Name</span>
@@ -58,40 +58,54 @@ require_once __DIR__ . '/../includes/header.php';
                             </select>
                         </label>
                         <label>
-                            <span>Cover Image (optional)</span>
+                            <span>Cover Image URL (optional)</span>
                             <input type="text" name="image_url" placeholder="Paste image URL">
                         </label>
                     </div>
-            <div class="grid-two">
-                <label>
-                    <span>Route From (Origin)</span>
-                    <input type="text" name="origin" placeholder="e.g., Colombo">
-                </label>
-                <label>
-                    <span>Route To (Destination)</span>
-                    <input type="text" name="destination" placeholder="e.g., Kandy">
-                </label>
-            </div>
-            <div class="grid-two">
-                <label>
-                    <span>Start Time</span>
-                    <input type="time" name="start_time">
-                </label>
-                <label>
-                    <span>End Time</span>
-                    <input type="time" name="end_time">
-                </label>
-            </div>
-            <div class="grid-two">
-                <label>
-                    <span>Bus Details (optional)</span>
-                    <textarea name="description" rows="3" placeholder="e.g., AC, WiFi, Recliner seats"></textarea>
-                </label>
-                <label>
-                    <span>Bus Stops (one per line, optional minutes)</span>
-                    <textarea name="stops" rows="3" placeholder="Example: Colombo | 0&#10;Kadawatha | 30&#10;Kandy | 240"></textarea>
-                </label>
-            </div>
+                    <label>
+                        <span>Upload Image (optional)</span>
+                        <input type="file" name="image_file" accept="image/*">
+                    </label>
+                    <div class="grid-two">
+                        <label>
+                            <span>Route From (Origin)</span>
+                            <input type="text" name="origin" placeholder="e.g., Colombo">
+                        </label>
+                        <label>
+                            <span>Route To (Destination)</span>
+                            <input type="text" name="destination" placeholder="e.g., Kandy">
+                        </label>
+                    </div>
+                    <div class="grid-two">
+                        <label>
+                            <span>Start Time</span>
+                            <input type="time" name="start_time">
+                        </label>
+                        <label>
+                            <span>End Time</span>
+                            <input type="time" name="end_time">
+                        </label>
+                    </div>
+                    <div class="grid-two">
+                        <label>
+                            <span>Bus Details (optional)</span>
+                            <textarea name="description" rows="3" placeholder="e.g., AC, WiFi, Recliner seats"></textarea>
+                        </label>
+                        <div>
+                            <span class="input-label">Stops & Arrival Time</span>
+                            <div class="stops-builder" data-stops-builder>
+                                <div class="stops-row" data-stop-row>
+                                    <input type="text" name="stop_names[]" placeholder="Stop name">
+                                    <input type="time" name="stop_times[]">
+                                    <button type="button" class="button ghost small" data-remove-stop>Remove</button>
+                                </div>
+                            </div>
+                            <div class="inline-form">
+                                <button type="button" class="button secondary small" data-add-stop>Add stop</button>
+                            </div>
+                            <small class="input-hint">Use exact arrival time for each stop (e.g., 08:30).</small>
+                        </div>
+                    </div>
                     <div class="inline-form">
                         <input type="hidden" name="is_active" value="0">
                         <label class="inline-switch">
@@ -106,11 +120,11 @@ require_once __DIR__ . '/../includes/header.php';
 
         <?php foreach ($buses as $bus): ?>
             <?php
-        $stopsText = get_bus_stops_lines((int) $bus['id']);
+        $stopRows = get_bus_stops_with_offsets((int) $bus['id']);
         $routeLabel = get_bus_route_label($bus);
         $busType = $bus['bus_type'] ?? 'Normal';
         $isActive = (int) ($bus['is_active'] ?? 1) === 1;
-        $stopCount = $stopsText === '' ? 0 : substr_count($stopsText, "\n") + 1;
+        $stopCount = count($stopRows);
         $startTime = $bus['start_time'] ?? '';
         $endTime = $bus['end_time'] ?? '';
         ?>
@@ -134,7 +148,7 @@ require_once __DIR__ . '/../includes/header.php';
                     </div>
                 </summary>
                 <div class="bus-accordion-body">
-                    <form method="post" action="/actions/update-bus.php" class="stack-md">
+                    <form method="post" action="/actions/update-bus.php" class="stack-md" enctype="multipart/form-data">
                         <input type="hidden" name="bus_id" value="<?= (int) $bus['id'] ?>">
                         <div class="grid-two">
                             <label>
@@ -156,10 +170,14 @@ require_once __DIR__ . '/../includes/header.php';
                                 </select>
                             </label>
                             <label>
-                                <span>Cover Image (optional)</span>
+                                <span>Cover Image URL (optional)</span>
                                 <input type="text" name="image_url" value="<?= h($bus['image_url'] ?? '') ?>" placeholder="Paste image URL">
                             </label>
                         </div>
+                        <label>
+                            <span>Upload Image (optional)</span>
+                            <input type="file" name="image_file" accept="image/*">
+                        </label>
                         <div class="grid-two">
                             <label>
                                 <span>Route From (Origin)</span>
@@ -184,10 +202,40 @@ require_once __DIR__ . '/../includes/header.php';
                             <span>Bus Details (optional)</span>
                             <textarea name="description" rows="3" placeholder="e.g., AC, WiFi, Recliner seats"><?= h($bus['description'] ?? '') ?></textarea>
                         </label>
-                        <label>
-                            <span>Bus Stops (one per line, optional minutes)</span>
-                            <textarea name="stops" rows="6" placeholder="Example: Colombo | 0&#10;Kadawatha | 30&#10;Kandy | 240"><?= h($stopsText) ?></textarea>
-                        </label>
+                        <div>
+                            <span class="input-label">Stops & Arrival Time</span>
+                            <div class="stops-builder" data-stops-builder>
+                                <?php if ($stopRows === []): ?>
+                                    <div class="stops-row" data-stop-row>
+                                        <input type="text" name="stop_names[]" placeholder="Stop name">
+                                        <input type="time" name="stop_times[]">
+                                        <button type="button" class="button ghost small" data-remove-stop>Remove</button>
+                                    </div>
+                                <?php else: ?>
+                                    <?php foreach ($stopRows as $row): ?>
+                                        <?php
+                                        $stopTime = $row['stop_time'] ?? '';
+                                        if ($stopTime === '' && $startTime !== '') {
+                                            $startMinutes = time_to_minutes($startTime);
+                                            $offsetMinutes = (int) ($row['stop_offset_minutes'] ?? 0);
+                                            if ($startMinutes !== null) {
+                                                $stopTime = minutes_to_time($startMinutes + $offsetMinutes);
+                                            }
+                                        }
+                                        ?>
+                                        <div class="stops-row" data-stop-row>
+                                            <input type="text" name="stop_names[]" value="<?= h($row['stop_name']) ?>" placeholder="Stop name">
+                                            <input type="time" name="stop_times[]" value="<?= h($stopTime) ?>">
+                                            <button type="button" class="button ghost small" data-remove-stop>Remove</button>
+                                        </div>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </div>
+                            <div class="inline-form">
+                                <button type="button" class="button secondary small" data-add-stop>Add stop</button>
+                            </div>
+                            <small class="input-hint">Use exact arrival time for each stop (e.g., 08:30).</small>
+                        </div>
                         <div class="inline-form">
                             <input type="hidden" name="is_active" value="0">
                             <label class="inline-switch">
@@ -202,4 +250,48 @@ require_once __DIR__ . '/../includes/header.php';
         <?php endforeach; ?>
     </div>
 </section>
+<script>
+    document.querySelectorAll('[data-stops-builder]').forEach((builder) => {
+        builder.addEventListener('click', (event) => {
+            const button = event.target.closest('[data-remove-stop]');
+            if (!button) {
+                return;
+            }
+            const row = button.closest('[data-stop-row]');
+            if (!row) {
+                return;
+            }
+            const rows = builder.querySelectorAll('[data-stop-row]');
+            if (rows.length <= 1) {
+                row.querySelectorAll('input').forEach((input) => {
+                    input.value = '';
+                });
+                return;
+            }
+            row.remove();
+        });
+    });
+
+    document.querySelectorAll('[data-add-stop]').forEach((button) => {
+        button.addEventListener('click', () => {
+            const form = button.closest('form');
+            if (!form) {
+                return;
+            }
+            const builder = form.querySelector('[data-stops-builder]');
+            if (!builder) {
+                return;
+            }
+            const row = document.createElement('div');
+            row.className = 'stops-row';
+            row.setAttribute('data-stop-row', '');
+            row.innerHTML = `
+                <input type="text" name="stop_names[]" placeholder="Stop name">
+                <input type="time" name="stop_times[]">
+                <button type="button" class="button ghost small" data-remove-stop>Remove</button>
+            `;
+            builder.appendChild(row);
+        });
+    });
+</script>
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

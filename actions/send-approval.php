@@ -39,6 +39,7 @@ $routeLabel = get_bus_route_label([
 ]);
 
 $offsets = get_stop_offsets_map((int) $booking['bus_id']);
+$stopTimes = get_stop_times_map((int) $booking['bus_id']);
 $startTime = $booking['bus_start_time'] ?? '';
 $endTime = $booking['bus_end_time'] ?? '';
 $pickupTime = '';
@@ -46,10 +47,14 @@ $dropTime = '';
 $duration = '';
 
 $startMinutes = time_to_minutes($startTime);
-if ($startMinutes !== null && $booking['pickup_point'] !== '' && array_key_exists($booking['pickup_point'], $offsets)) {
+if ($booking['pickup_point'] !== '' && array_key_exists($booking['pickup_point'], $stopTimes)) {
+    $pickupTime = (string) $stopTimes[$booking['pickup_point']];
+} elseif ($startMinutes !== null && $booking['pickup_point'] !== '' && array_key_exists($booking['pickup_point'], $offsets)) {
     $pickupTime = minutes_to_time($startMinutes + $offsets[$booking['pickup_point']]);
 }
-if ($startMinutes !== null && $booking['drop_location'] !== '' && array_key_exists($booking['drop_location'], $offsets)) {
+if ($booking['drop_location'] !== '' && array_key_exists($booking['drop_location'], $stopTimes)) {
+    $dropTime = (string) $stopTimes[$booking['drop_location']];
+} elseif ($startMinutes !== null && $booking['drop_location'] !== '' && array_key_exists($booking['drop_location'], $offsets)) {
     $dropTime = minutes_to_time($startMinutes + $offsets[$booking['drop_location']]);
 }
 if ($startTime !== '' && $endTime !== '') {

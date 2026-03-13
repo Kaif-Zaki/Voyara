@@ -307,6 +307,7 @@ const pickupHint = document.getElementById('pickupHint');
 const dropHint = document.getElementById('dropHint');
 
 let stopOffsets = {};
+let stopTimes = {};
 let busStartTime = '';
 let busEndTime = '';
 
@@ -370,6 +371,7 @@ async function loadStops(busId) {
         const route = typeof data.route === 'string' ? data.route : '';
         const bus = data.bus || null;
         stopOffsets = data.stop_offsets || {};
+        stopTimes = data.stop_times || {};
         busStartTime = bus && bus.start_time ? bus.start_time : '';
         busEndTime = bus && bus.end_time ? bus.end_time : '';
         const options = stops.map((stop) => `<option value="${stop}"></option>`).join('');
@@ -431,20 +433,19 @@ function updatePickupDropHints() {
         return;
     }
     const start = timeToMinutes(busStartTime);
-    if (start == null) {
-        pickupHint.textContent = '';
-        dropHint.textContent = '';
-        return;
-    }
     const pickup = pickupInput ? pickupInput.value.trim() : '';
     const drop = dropInput ? dropInput.value.trim() : '';
-    if (pickup && Object.prototype.hasOwnProperty.call(stopOffsets, pickup)) {
+    if (pickup && Object.prototype.hasOwnProperty.call(stopTimes, pickup)) {
+        pickupHint.textContent = `Estimated pickup time: ${stopTimes[pickup]}`;
+    } else if (start != null && pickup && Object.prototype.hasOwnProperty.call(stopOffsets, pickup)) {
         const minutes = start + Number(stopOffsets[pickup] || 0);
         pickupHint.textContent = `Estimated pickup time: ${minutesToTime(minutes)}`;
     } else {
         pickupHint.textContent = '';
     }
-    if (drop && Object.prototype.hasOwnProperty.call(stopOffsets, drop)) {
+    if (drop && Object.prototype.hasOwnProperty.call(stopTimes, drop)) {
+        dropHint.textContent = `Estimated drop time: ${stopTimes[drop]}`;
+    } else if (start != null && drop && Object.prototype.hasOwnProperty.call(stopOffsets, drop)) {
         const minutes = start + Number(stopOffsets[drop] || 0);
         dropHint.textContent = `Estimated drop time: ${minutesToTime(minutes)}`;
     } else {

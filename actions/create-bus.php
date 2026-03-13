@@ -24,32 +24,34 @@ $startTime = request_value('start_time');
 $endTime = request_value('end_time');
 $stopsRaw = request_value('stops');
 
+$stopNames = $_POST['stop_names'] ?? [];
+$stopTimes = $_POST['stop_times'] ?? [];
+if (is_array($stopNames) && is_array($stopTimes)) {
+    $lines = [];
+    foreach ($stopNames as $index => $stopName) {
+        $stopName = trim((string) $stopName);
+        if ($stopName === '') {
+            continue;
+        }
+        $stopTime = trim((string) ($stopTimes[$index] ?? ''));
+        $lines[] = $stopTime !== '' ? $stopName . ' | ' . $stopTime : $stopName;
+    }
+    if ($lines !== []) {
+        $stopsRaw = implode("\n", $lines);
+    }
+}
+
+$uploadedImage = store_bus_image($_FILES['image_file'] ?? []);
+if ($uploadedImage !== null) {
+    $imageUrl = $uploadedImage;
+}
+
 if ($name === '' || $busNumber === '') {
     header('Location: /admin/buses.php');
     exit;
 }
 
-$stops = preg_split('/\r\n|\r|\n/', $stopsRaw) ?: [];
-$normalizedStops = [];
-foreach ($stops as $stop) {
-    $stop = trim($stop);
-    if ($stop === '') {
-        continue;
-    }
-    $parts = array_map('trim', explode('|', $stop));
-    $name = $parts[0] ?? '';
-    if ($name === '') {
-        continue;
-    }
-    $offset = 0;
-    if (isset($parts[1]) && $parts[1] !== '') {
-        $offset = max(0, (int) $parts[1]);
-    }
-    if (array_key_exists($name, $normalizedStops)) {
-        continue;
-    }
-    $normalizedStops[$name] = $offset;
-}
+$stopEntries = parse_bus_stop_lines($stopsRaw, $startTime !== '' ? $startTime : null);
 
 $pdo = db();
 $pdo->beginTransaction();
@@ -75,15 +77,16 @@ try {
 
     $busId = (int) $pdo->lastInsertId();
 
-    if ($normalizedStops !== []) {
-        $insertStop = $pdo->prepare('INSERT INTO bus_stops (bus_id, stop_name, stop_offset_minutes, sort_order) VALUES (:bus_id, :stop_name, :stop_offset_minutes, :sort_order)');
+    if ($stopEntries !== []) {
+        $insertStop = $pdo->prepare('INSERT INTO bus_stops (bus_id, stop_name, stop_offset_minutes, stop_time, sort_order) VALUES (:bus_id, :stop_name, :stop_offset_minutes, :stop_time, :sort_order)');
         $index = 0;
-        foreach ($normalizedStops as $stopName => $offset) {
+        foreach ($stopEntries as $entry) {
             $index++;
             $insertStop->execute([
                 'bus_id' => $busId,
-                'stop_name' => $stopName,
-                'stop_offset_minutes' => $offset,
+                'stop_name' => $entry['name'],
+                'stop_offset_minutes' => $entry['offset'],
+                'stop_time' => $entry['stop_time'],
                 'sort_order' => $index,
             ]);
         }
