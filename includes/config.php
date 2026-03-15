@@ -2,19 +2,7 @@
 
 declare(strict_types=1);
 
-// const DB_HOST = '127.0.0.1';
-const DB_HOST = '82.25.121.136';
 
-const DB_PORT = '3306';
-
-// const DB_NAME = 'bus_room_schedule';
-const DB_NAME = 'u414730660_zaky';
-
-// const DB_USER = 'root';
-const DB_USER = 'u414730660_zaky';
-
-// const DB_PASS = 'kaifzakey@IJSE';
-const DB_PASS = 'Zaky2026';
 
 
 // Use WhatsApp number in international format without +, spaces, or leading zero.
