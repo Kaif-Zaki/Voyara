@@ -17,18 +17,24 @@ $travelDate = selected_date_or_today(request_value('travel_date'));
 $status = request_value('status');
 
 if ($bookingId <= 0 || !in_array($status, ['pending', 'booked', 'available'], true)) {
-    header('Location: /admin/bookings.php?travel_date=' . urlencode($travelDate));
-    exit;
+    redirect_with_flash('/admin/bookings.php?travel_date=' . urlencode($travelDate), 'Invalid booking update request.');
 }
 
 $booking = get_booking_by_id($bookingId);
 
 if ($booking) {
-    $stmt = db()->prepare('UPDATE bookings SET status = :status WHERE id = :id');
-    $stmt->execute([
-        'status' => $status,
-        'id' => $bookingId,
-    ]);
+    try {
+        $stmt = db()->prepare('UPDATE bookings SET status = :status WHERE id = :id');
+        $stmt->execute([
+            'status' => $status,
+            'id' => $bookingId,
+        ]);
+    } catch (Throwable $exception) {
+        redirect_with_flash('/admin/bookings.php?travel_date=' . urlencode($travelDate), 'Failed to update booking status.');
+    }
+    flash_set('success', 'Booking status updated.');
+} else {
+    flash_set('error', 'Booking not found.');
 }
 
 header('Location: /admin/bookings.php?travel_date=' . urlencode($travelDate));

@@ -16,15 +16,15 @@ $pendingRequests = $isAdminArea ? get_pending_requests_count() : 0;
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= h($pageTitle) ?></title>
-    <link rel="icon" type="image/png" sizes="32x32" href="/assets/images/PageLogo.png">
-<link rel="icon" type="image/png" sizes="16x16" href="/assets/images/SiteLogo.png">
-    <link rel="stylesheet" href="/assets/css/style.css">
+    <link rel="icon" type="image/png" sizes="32x32" href="<?= BASE_PATH ?>assets/images/PageLogo.png">
+<link rel="icon" type="image/png" sizes="16x16" href="<?= BASE_PATH ?>assets/images/SiteLogo.png">
+    <link rel="stylesheet" href="<?= BASE_PATH ?>assets/css/style.css">
 </head>
 <body class="<?= h($bodyClass) ?>">
 <header class="site-header">
     <div class="container header-row">
         <a class="brand" href="/index.php" aria-label="Voyara home">
-            <img src="/assets/images/SiteLogo.png" alt="Voyara logo">
+            <img src="<?= BASE_PATH ?>assets/images/SiteLogo.png" alt="Voyara logo">
         </a>
         <button class="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mobileNav">
             <span class="nav-toggle-bar"></span>

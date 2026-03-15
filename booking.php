@@ -86,7 +86,6 @@ require_once __DIR__ . '/includes/header.php';
             <span><i class="dot available"></i> Available</span>
             <span><i class="dot pending"></i> Pending</span>
             <span><i class="dot booked"></i> Booked</span>
-            <span><i class="dot missing"></i> Not configured</span>
         </div>
 
         <div class="bus-structure" data-seat-map="49" aria-label="Bus seat map">
@@ -117,17 +116,17 @@ require_once __DIR__ . '/includes/header.php';
                                     <?php foreach ($slots as $slot): ?>
                                         <?php
                                         $seat = $seatsByNumber[$slot] ?? null;
-                                        $status = $seat ? ($seat['seat_status'] ?? 'available') : 'missing';
+                                        $status = $seat ? ($seat['seat_status'] ?? 'available') : 'disabled';
                                         $seatId = (int) ($seat['id'] ?? 0);
-                                        $label = $seat ? seat_label_49($slot) : 'Not configured';
+                                        $label = $seat ? seat_label_49($slot) : '';
                                         ?>
                                         <button
                                             type="button"
-                                            class="seat <?= h($status) ?> <?= $seat ? '' : 'missing' ?> back-bench"
+                                            class="seat <?= h($status) ?> <?= $seat ? '' : 'disabled' ?> back-bench"
                                             data-seat-id="<?= $seatId ?: '' ?>"
                                             data-seat-number="<?= h($slot) ?>"
                                             data-seat-label="<?= h($label) ?>"
-                                            title="<?= h($slot . ' - ' . $label) ?>"
+                                            title="<?= $label !== '' ? h($slot . ' - ' . $label) : '' ?>"
                                             <?= ($status !== 'available' || $seatId === 0) ? 'disabled' : '' ?>
                                         >
                                             <span class="seat-num"><?= h($slot) ?></span>
@@ -145,17 +144,17 @@ require_once __DIR__ . '/includes/header.php';
                                             <div class="bus-aisle" aria-hidden="true"></div>
                                         <?php else:
                                             $seat = $seatsByNumber[$slot] ?? null;
-                                            $status = $seat ? ($seat['seat_status'] ?? 'available') : 'missing';
+                                            $status = $seat ? ($seat['seat_status'] ?? 'available') : 'disabled';
                                             $seatId = (int) ($seat['id'] ?? 0);
-                                            $label = $seat ? seat_label_49($slot) : 'Not configured';
+                                            $label = $seat ? seat_label_49($slot) : '';
                                             ?>
                                             <button
                                                 type="button"
-                                                class="seat <?= h($status) ?> <?= $seat ? '' : 'missing' ?>"
+                                                class="seat <?= h($status) ?> <?= $seat ? '' : 'disabled' ?>"
                                                 data-seat-id="<?= $seatId ?: '' ?>"
                                                 data-seat-number="<?= h($slot) ?>"
                                                 data-seat-label="<?= h($label) ?>"
-                                                title="<?= h($slot . ' - ' . $label) ?>"
+                                                title="<?= $label !== '' ? h($slot . ' - ' . $label) : '' ?>"
                                                 <?= ($status !== 'available' || $seatId === 0) ? 'disabled' : '' ?>
                                             >
                                                 <span class="seat-num"><?= h($slot) ?></span>

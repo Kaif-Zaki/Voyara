@@ -18,8 +18,16 @@ $pageTitle = 'Manage Seats';
 $isAdminArea = true;
 
 require_once __DIR__ . '/../includes/header.php';
+$flashError = flash_get('error');
+$flashSuccess = flash_get('success');
 ?>
 <section class="panel stack-lg">
+    <?php if ($flashError !== ''): ?>
+        <div class="alert error"><?= h($flashError) ?></div>
+    <?php endif; ?>
+    <?php if ($flashSuccess !== ''): ?>
+        <div class="alert success"><?= h($flashSuccess) ?></div>
+    <?php endif; ?>
     <div class="split-row">
         <div>
             <p class="eyebrow">Admin panel</p>
@@ -54,7 +62,6 @@ require_once __DIR__ . '/../includes/header.php';
         <span><i class="dot available"></i> Available</span>
         <span><i class="dot pending"></i> Pending</span>
         <span><i class="dot booked"></i> Booked</span>
-        <span><i class="dot missing"></i> Not configured</span>
     </div>
 
     <div class="bus-structure admin-layout" data-seat-map="49" aria-label="Bus seat map">
@@ -81,11 +88,11 @@ require_once __DIR__ . '/../includes/header.php';
                             <?php foreach ($slots as $slot): ?>
                                 <?php
                                 $seat = $seatsByNumber[$slot] ?? null;
-                                $status = $seat ? ($seat['seat_status'] ?? 'available') : 'missing';
-                                $missingClass = $seat ? '' : 'missing';
-                                $label = $seat ? seat_label_49($slot) : 'Not configured';
+                                $status = $seat ? ($seat['seat_status'] ?? 'available') : 'disabled';
+                                $missingClass = $seat ? '' : 'disabled';
+                                $label = $seat ? seat_label_49($slot) : '';
                                 ?>
-                                <div class="seat <?= h($status) ?> static-seat back-bench <?= h($missingClass) ?>" data-seat-id="<?= (int) ($seat['id'] ?? 0) ?>" data-seat-label="<?= h($slot . ' - ' . $label) ?>" title="<?= h($slot . ' - ' . $label) ?>">
+                                <div class="seat <?= h($status) ?> static-seat back-bench <?= h($missingClass) ?>" data-seat-id="<?= $seat ? (int) $seat['id'] : '' ?>" data-seat-label="<?= $label !== '' ? h($slot . ' - ' . $label) : '' ?>" title="<?= $label !== '' ? h($slot . ' - ' . $label) : '' ?>">
                                     <span class="seat-num"><?= h($slot) ?></span>
                                 </div>
                             <?php endforeach; ?>
@@ -101,11 +108,11 @@ require_once __DIR__ . '/../includes/header.php';
                                     <div class="bus-aisle" aria-hidden="true"></div>
                                 <?php else:
                                     $seat = $seatsByNumber[$slot] ?? null;
-                                    $status = $seat ? ($seat['seat_status'] ?? 'available') : 'missing';
-                                    $missingClass = $seat ? '' : 'missing';
-                                    $label = $seat ? seat_label_49($slot) : 'Not configured';
+                                    $status = $seat ? ($seat['seat_status'] ?? 'available') : 'disabled';
+                                    $missingClass = $seat ? '' : 'disabled';
+                                    $label = $seat ? seat_label_49($slot) : '';
                                     ?>
-                                    <div class="seat <?= h($status) ?> static-seat <?= h($missingClass) ?>" data-seat-id="<?= (int) ($seat['id'] ?? 0) ?>" data-seat-label="<?= h($slot . ' - ' . $label) ?>" title="<?= h($slot . ' - ' . $label) ?>">
+                                    <div class="seat <?= h($status) ?> static-seat <?= h($missingClass) ?>" data-seat-id="<?= $seat ? (int) $seat['id'] : '' ?>" data-seat-label="<?= $label !== '' ? h($slot . ' - ' . $label) : '' ?>" title="<?= $label !== '' ? h($slot . ' - ' . $label) : '' ?>">
                                         <span class="seat-num"><?= h($slot) ?></span>
                                     </div>
                                 <?php endif;
@@ -142,6 +149,9 @@ const seatStatusSelected = document.getElementById('seatStatusSelected');
 
 seatButtons.forEach((seat) => {
     seat.addEventListener('click', () => {
+        if (!seat.dataset.seatId) {
+            return;
+        }
         seatButtons.forEach((s) => s.classList.remove('selected'));
         seat.classList.add('selected');
         seatIdInput.value = seat.dataset.seatId || '';

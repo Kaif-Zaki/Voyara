@@ -12,8 +12,16 @@ $pageTitle = 'Manage Buses';
 $isAdminArea = true;
 
 require_once __DIR__ . '/../includes/header.php';
+$flashError = flash_get('error');
+$flashSuccess = flash_get('success');
 ?>
 <section class="panel stack-lg">
+    <?php if ($flashError !== ''): ?>
+        <div class="alert error"><?= h($flashError) ?></div>
+    <?php endif; ?>
+    <?php if ($flashSuccess !== ''): ?>
+        <div class="alert success"><?= h($flashSuccess) ?></div>
+    <?php endif; ?>
     <div class="split-row">
         <div>
             <p class="eyebrow">Admin panel</p>

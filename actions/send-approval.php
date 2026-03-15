@@ -16,22 +16,24 @@ $bookingId = (int) request_value('booking_id');
 $travelDate = selected_date_or_today(request_value('travel_date'));
 
 if ($bookingId <= 0) {
-    header('Location: /admin/bookings.php?travel_date=' . urlencode($travelDate));
-    exit;
+    redirect_with_flash('/admin/bookings.php?travel_date=' . urlencode($travelDate), 'Invalid booking request.');
 }
 
 $booking = get_booking_details($bookingId);
 
 if (!$booking) {
-    header('Location: /admin/bookings.php?travel_date=' . urlencode($travelDate));
-    exit;
+    redirect_with_flash('/admin/bookings.php?travel_date=' . urlencode($travelDate), 'Booking not found.');
 }
 
-$stmt = db()->prepare('UPDATE bookings SET status = :status WHERE id = :id');
-$stmt->execute([
-    'status' => 'booked',
-    'id' => $bookingId,
-]);
+try {
+    $stmt = db()->prepare('UPDATE bookings SET status = :status WHERE id = :id');
+    $stmt->execute([
+        'status' => 'booked',
+        'id' => $bookingId,
+    ]);
+} catch (Throwable $exception) {
+    redirect_with_flash('/admin/bookings.php?travel_date=' . urlencode($travelDate), 'Failed to approve booking.');
+}
 
 $routeLabel = get_bus_route_label([
     'origin' => $booking['bus_origin'] ?? '',
@@ -95,8 +97,7 @@ $message = implode("\n", $messageLines);
 
 $whatsAppNumber = normalize_phone_number((string) $booking['phone']);
 if ($whatsAppNumber === '') {
-    header('Location: /admin/bookings.php?travel_date=' . urlencode($travelDate));
-    exit;
+    redirect_with_flash('/admin/bookings.php?travel_date=' . urlencode($travelDate), 'Passenger phone number is invalid.');
 }
 $whatsAppUrl = 'https://wa.me/' . $whatsAppNumber . '?text=' . rawurlencode($message);
 header('Location: ' . $whatsAppUrl);

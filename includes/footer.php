@@ -61,13 +61,13 @@ $isAdminArea = $isAdminArea ?? false;
                         <a href="/contact.php">Contact</a>
                     </nav>
                     <a class="footer2-brand" href="/index.php" aria-label="Voyara home">
-                        <img src="/assets/images/SiteLogo.png" alt="Voyara logo">
+                        <img src="<?= BASE_PATH ?>assets/images/SiteLogo.png" alt="Voyara logo">
                     </a>
                 </div>
             </div>
         </div>
     </footer>
 <?php endif; ?>
-<script src="/assets/js/theme.js"></script>
+<script src="<?= BASE_PATH ?>assets/js/theme.js"></script>
 </body>
 </html>

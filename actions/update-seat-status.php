@@ -18,21 +18,25 @@ $travelDate = selected_date_or_today(request_value('travel_date'));
 $status = request_value('status');
 
 if ($seatId <= 0 || $busId <= 0 || !in_array($status, ['available', 'pending', 'booked'], true)) {
-    header('Location: /admin/seats.php?travel_date=' . urlencode($travelDate) . '&bus_id=' . $busId);
-    exit;
+    redirect_with_flash('/admin/seats.php?travel_date=' . urlencode($travelDate) . '&bus_id=' . $busId, 'Invalid seat status update request.');
 }
 
-$stmt = db()->prepare('
-    INSERT INTO seat_status_overrides (bus_id, seat_id, travel_date, status)
-    VALUES (:bus_id, :seat_id, :travel_date, :status)
-    ON DUPLICATE KEY UPDATE status = VALUES(status)
-');
-$stmt->execute([
-    'bus_id' => $busId,
-    'seat_id' => $seatId,
-    'travel_date' => $travelDate,
-    'status' => $status,
-]);
+try {
+    $stmt = db()->prepare('
+        INSERT INTO seat_status_overrides (bus_id, seat_id, travel_date, status)
+        VALUES (:bus_id, :seat_id, :travel_date, :status)
+        ON DUPLICATE KEY UPDATE status = VALUES(status)
+    ');
+    $stmt->execute([
+        'bus_id' => $busId,
+        'seat_id' => $seatId,
+        'travel_date' => $travelDate,
+        'status' => $status,
+    ]);
+} catch (Throwable $exception) {
+    redirect_with_flash('/admin/seats.php?travel_date=' . urlencode($travelDate) . '&bus_id=' . $busId, 'Failed to update seat status.');
+}
 
+flash_set('success', 'Seat status updated.');
 header('Location: /admin/seats.php?travel_date=' . urlencode($travelDate) . '&bus_id=' . $busId);
 exit;

@@ -24,6 +24,97 @@ function request_value(string $key, string|int|float|bool $default = ''): string
     return trim((string) ($_POST[$key] ?? $_GET[$key] ?? $default));
 }
 
+function flash_set(string $key, string $message): void
+{
+    if (!isset($_SESSION['flash']) || !is_array($_SESSION['flash'])) {
+        $_SESSION['flash'] = [];
+    }
+    $_SESSION['flash'][$key] = $message;
+}
+
+function flash_get(string $key): string
+{
+    if (!isset($_SESSION['flash']) || !is_array($_SESSION['flash'])) {
+        return '';
+    }
+    $message = (string) ($_SESSION['flash'][$key] ?? '');
+    if ($message !== '') {
+        unset($_SESSION['flash'][$key]);
+    }
+    return $message;
+}
+
+function redirect_with_flash(string $path, string $message, string $key = 'error'): never
+{
+    flash_set($key, $message);
+    header('Location: ' . $path);
+    exit;
+}
+
+function validate_required(string $value, string $label, array &$errors, int $maxLength = 120): string
+{
+    $value = trim($value);
+    if ($value === '') {
+        $errors[] = $label . ' is required.';
+        return '';
+    }
+    if (strlen($value) > $maxLength) {
+        $errors[] = $label . ' must be within ' . $maxLength . ' characters.';
+    }
+    return $value;
+}
+
+function validate_optional_text(string $value, string $label, array &$errors, int $maxLength = 255): string
+{
+    $value = trim($value);
+    if ($value !== '' && strlen($value) > $maxLength) {
+        $errors[] = $label . ' must be within ' . $maxLength . ' characters.';
+    }
+    return $value;
+}
+
+function validate_optional_time(?string $value, string $label, array &$errors): ?string
+{
+    $value = trim((string) $value);
+    if ($value === '') {
+        return null;
+    }
+    $normalized = normalize_stop_time($value);
+    if ($normalized === null) {
+        $errors[] = $label . ' must be a valid time (HH:MM).';
+        return null;
+    }
+    return $normalized;
+}
+
+function validate_bus_type(string $value, array &$errors): string
+{
+    $value = trim($value);
+    if ($value === '') {
+        return 'Normal';
+    }
+    if (!in_array($value, bus_types(), true)) {
+        $errors[] = 'Bus type is invalid.';
+        return 'Normal';
+    }
+    return $value;
+}
+
+function validate_phone(string $value, array &$errors): string
+{
+    $normalized = normalize_phone_number($value);
+    if ($normalized === '' || strlen($normalized) < 8 || strlen($normalized) > 15) {
+        $errors[] = 'Phone number is invalid.';
+        return '';
+    }
+    return $normalized;
+}
+
+function upload_attempted(array $file): bool
+{
+    return isset($file['error']) && $file['error'] !== UPLOAD_ERR_NO_FILE;
+}
+
 function selected_date_or_today(?string $value = null): string
 {
     $date = $value ?: date('Y-m-d');
@@ -67,9 +158,24 @@ function get_bus_stops(int $busId): array
 
 function get_bus_stops_with_offsets(int $busId): array
 {
-    $stmt = db()->prepare('SELECT stop_name, stop_offset_minutes, stop_time FROM bus_stops WHERE bus_id = :bus_id ORDER BY sort_order ASC, id ASC');
-    $stmt->execute(['bus_id' => $busId]);
-    return $stmt->fetchAll();
+    try {
+        $stmt = db()->prepare('SELECT stop_name, stop_offset_minutes, stop_time FROM bus_stops WHERE bus_id = :bus_id ORDER BY sort_order ASC, id ASC');
+        $stmt->execute(['bus_id' => $busId]);
+        return $stmt->fetchAll();
+    } catch (PDOException $exception) {
+        if ($exception->getCode() !== '42S22') {
+            throw $exception;
+        }
+
+        $stmt = db()->prepare('SELECT stop_name, stop_offset_minutes FROM bus_stops WHERE bus_id = :bus_id ORDER BY sort_order ASC, id ASC');
+        $stmt->execute(['bus_id' => $busId]);
+        $rows = $stmt->fetchAll();
+        foreach ($rows as &$row) {
+            $row['stop_time'] = null;
+        }
+        unset($row);
+        return $rows;
+    }
 }
 
 function get_bus_stops_lines(int $busId): string
@@ -223,7 +329,7 @@ function store_bus_image(array $file): ?string
         return null;
     }
 
-    return '/assets/uploads/buses/' . $filename;
+    return BASE_PATH . 'assets/uploads/buses/' . $filename;
 }
 
 function time_to_minutes(?string $time): ?int
@@ -266,7 +372,7 @@ function normalize_phone_number(string $phone): string
         return '';
     }
     // Sri Lanka fallback: if number starts with 0 and is 10 digits, convert to country code.
-    if (strlen($digits) === 10 && str_starts_with($digits, '0')) {
+    if (strlen($digits) === 10 && substr($digits, 0, 1) === '0') {
         return '94' . substr($digits, 1);
     }
     return $digits;

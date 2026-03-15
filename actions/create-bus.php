@@ -12,6 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+$errors = [];
 $name = request_value('name');
 $busNumber = request_value('bus_number');
 $origin = request_value('origin');
@@ -23,6 +24,16 @@ $isActive = request_value('is_active');
 $startTime = request_value('start_time');
 $endTime = request_value('end_time');
 $stopsRaw = request_value('stops');
+
+$name = validate_required($name, 'Bus name', $errors, 120);
+$busNumber = validate_required($busNumber, 'Bus number', $errors, 60);
+$origin = validate_optional_text($origin, 'Origin', $errors, 120);
+$destination = validate_optional_text($destination, 'Destination', $errors, 120);
+$busType = validate_bus_type($busType, $errors);
+$description = validate_optional_text($description, 'Description', $errors, 600);
+$imageUrl = validate_optional_text($imageUrl, 'Image URL', $errors, 500);
+$startTime = validate_optional_time($startTime, 'Start time', $errors);
+$endTime = validate_optional_time($endTime, 'End time', $errors);
 
 $stopNames = $_POST['stop_names'] ?? [];
 $stopTimes = $_POST['stop_times'] ?? [];
@@ -44,14 +55,15 @@ if (is_array($stopNames) && is_array($stopTimes)) {
 $uploadedImage = store_bus_image($_FILES['image_file'] ?? []);
 if ($uploadedImage !== null) {
     $imageUrl = $uploadedImage;
+} elseif (upload_attempted($_FILES['image_file'] ?? [])) {
+    $errors[] = 'Uploaded image must be a valid JPG, PNG, WEBP, GIF, or AVIF file.';
 }
 
-if ($name === '' || $busNumber === '') {
-    header('Location: /admin/buses.php');
-    exit;
+if ($errors !== []) {
+    redirect_with_flash('/admin/buses.php', implode(' ', $errors));
 }
 
-$stopEntries = parse_bus_stop_lines($stopsRaw, $startTime !== '' ? $startTime : null);
+$stopEntries = parse_bus_stop_lines($stopsRaw, $startTime !== null ? $startTime : null);
 
 $pdo = db();
 $pdo->beginTransaction();
@@ -70,8 +82,8 @@ try {
         'bus_type' => $busType !== '' ? $busType : 'Normal',
         'description' => $description !== '' ? $description : null,
         'image_url' => $imageUrl !== '' ? $imageUrl : null,
-        'start_time' => $startTime !== '' ? $startTime : null,
-        'end_time' => $endTime !== '' ? $endTime : null,
+        'start_time' => $startTime !== null ? $startTime : null,
+        'end_time' => $endTime !== null ? $endTime : null,
         'is_active' => $isActive === '1' ? 1 : 0,
     ]);
 
@@ -82,13 +94,26 @@ try {
         $index = 0;
         foreach ($stopEntries as $entry) {
             $index++;
-            $insertStop->execute([
-                'bus_id' => $busId,
-                'stop_name' => $entry['name'],
-                'stop_offset_minutes' => $entry['offset'],
-                'stop_time' => $entry['stop_time'],
-                'sort_order' => $index,
-            ]);
+            try {
+                $insertStop->execute([
+                    'bus_id' => $busId,
+                    'stop_name' => $entry['name'],
+                    'stop_offset_minutes' => $entry['offset'],
+                    'stop_time' => $entry['stop_time'],
+                    'sort_order' => $index,
+                ]);
+            } catch (PDOException $exception) {
+                if ($exception->getCode() !== '42S22') {
+                    throw $exception;
+                }
+                $fallback = $pdo->prepare('INSERT INTO bus_stops (bus_id, stop_name, stop_offset_minutes, sort_order) VALUES (:bus_id, :stop_name, :stop_offset_minutes, :sort_order)');
+                $fallback->execute([
+                    'bus_id' => $busId,
+                    'stop_name' => $entry['name'],
+                    'stop_offset_minutes' => $entry['offset'],
+                    'sort_order' => $index,
+                ]);
+            }
         }
     }
 
@@ -105,7 +130,9 @@ try {
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }
+    redirect_with_flash('/admin/buses.php', 'Failed to save the bus. Please try again.');
 }
 
+flash_set('success', 'Bus created successfully.');
 header('Location: /admin/buses.php');
 exit;

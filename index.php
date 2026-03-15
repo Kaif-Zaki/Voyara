@@ -6,6 +6,7 @@ $pageTitle = 'Voyara';
 
 require_once __DIR__ . '/includes/header.php';
 ?>
+
 <section class="home-hero hero-image hero-split">
     <div class="hero-copy">
         <p class="eyebrow">Voyara bus booking</p>

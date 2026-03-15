@@ -15,7 +15,13 @@ $fullName = request_value('full_name');
 $phone = request_value('phone');
 $pickupPoint = request_value('pickup_point');
 $dropLocation = request_value('drop_location');
-$seatIds = array_values(array_filter(array_map('intval', explode(',', request_value('seat_ids')))));
+$seatIds = array_values(array_unique(array_filter(array_map('intval', explode(',', request_value('seat_ids'))))));
+$errors = [];
+
+$fullName = validate_required($fullName, 'Full name', $errors, 120);
+$phoneNormalized = validate_phone($phone, $errors);
+$pickupPoint = validate_required($pickupPoint, 'Pickup point', $errors, 120);
+$dropLocation = validate_required($dropLocation, 'Drop location', $errors, 120);
 
 $_SESSION['booking_old'] = [
     'full_name' => $fullName,
@@ -24,8 +30,15 @@ $_SESSION['booking_old'] = [
     'drop_location' => $dropLocation,
 ];
 
-if ($busId <= 0 || $fullName === '' || $phone === '' || $pickupPoint === '' || $dropLocation === '' || $seatIds === []) {
-    $_SESSION['booking_error'] = 'Complete all fields and select at least one available seat.';
+if ($busId <= 0) {
+    $errors[] = 'Please select a bus.';
+}
+if ($seatIds === []) {
+    $errors[] = 'Select at least one available seat.';
+}
+
+if ($errors !== []) {
+    $_SESSION['booking_error'] = implode(' ', $errors);
     header('Location: /booking.php?travel_date=' . urlencode($travelDate) . '&bus_id=' . $busId);
     exit;
 }
@@ -92,7 +105,7 @@ try {
         'bus_id' => $busId,
         'travel_date' => $travelDate,
         'full_name' => $fullName,
-        'phone' => $phone,
+        'phone' => $phoneNormalized !== '' ? $phoneNormalized : $phone,
         'pickup_point' => $pickupPoint,
         'drop_location' => $dropLocation,
     ]);
